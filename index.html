@@ -2,14 +2,14 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="fin.">
 <meta name="theme-color" content="#0b0c14">
 <title>fin. — Controle Financeiro</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 :root{
   --bg:#0b0c14;--surf:#13141f;--surf2:#1c1e2e;
   --border:rgba(255,255,255,.08);
@@ -20,13 +20,29 @@
 }
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--surf2);border-radius:2px;}
+html{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+  height:100%;
+  overflow-x:hidden;
+}
 html,body{min-height:100%;background:var(--bg);color:var(--text);}
-body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;
+  overflow-x:hidden;
+  overscroll-behavior-y:none;
+  -webkit-overflow-scrolling:touch;
+  position:relative;
+  width:100%;
+  max-width:100vw;
+}
 
 /* ── Auth screen ── */
 #authScreen{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
   padding:24px;
+  width:100%;
+  overflow-x:hidden;
 }
 .auth-box{
   width:100%;max-width:380px;
@@ -182,12 +198,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sa
 }
 
 @media(max-width:767px){
-  .layout{flex-direction:column;}
+  .layout{flex-direction:column;width:100%;overflow-x:hidden;}
   .sidebar{display:none;}
-  .main-wrap{max-width:100%;padding:0 0 8px;}
+  .main-wrap{max-width:100%;width:100%;padding:0 0 8px;overflow-x:hidden;}
   .mob-hdr{display:block;}
   .mob-nav{display:grid;}
   body{padding-bottom:calc(var(--nav)+env(safe-area-inset-bottom)+8px);}
+  .page{width:100%;overflow-x:hidden;}
+  .grid2{grid-template-columns:1fr 1fr;}
+  .card,.card-form,.bal{margin-left:12px;margin-right:12px;}
+  .grid2{margin-left:12px;margin-right:12px;}
+  .filter-row{padding-left:12px;padding-right:12px;}
+  .tx-list{padding-left:12px;padding-right:12px;}
+  .cat-bars{padding:0;}
 }
 @media(min-width:768px) and (max-width:1023px){
   :root{--sb:220px;}
@@ -363,6 +386,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sa
 .cat-manage-del:hover{color:var(--red);background:var(--red-d);}
 .cat-manage-del.disabled{opacity:.3;cursor:not-allowed;}
 .cat-section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:12px 0 6px;}
+
+/* ── iOS native feel ── */
+input,select,textarea,button{
+  -webkit-appearance:none;
+  appearance:none;
+  border-radius:0;
+}
+/* Previne zoom ao focar input no iOS (fonte mínima 16px) */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+select{font-size:16px !important;}
+/* Remove highlight azul ao tocar no iOS */
+a,button,input,select{-webkit-tap-highlight-color:transparent;}
+/* Travamento de scroll horizontal em todos os containers */
+#appScreen,#authScreen,.layout,.main-wrap,.page{
+  max-width:100vw;overflow-x:hidden;
+}
+/* Scroll suave nativo iOS nos containers */
+.cat-manage-list,.tx-list,.filter-row{
+  -webkit-overflow-scrolling:touch;
+}
+/* Previne seleção de texto em elementos de UI */
+.mob-nav,.mob-hdr,.sidebar,.mn-btn,.sb-btn,.tog-btn,.chip{
+  -webkit-user-select:none;user-select:none;
+}
 
 /* Config warning */
 .cfg-warn{
