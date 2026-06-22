@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="fin.">
+<meta name="theme-color" content="#0b0c14">
+<title>fin. — Controle Financeiro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0b0c14;--surf:#13141f;--surf2:#1c1e2e;
+  --border:rgba(255,255,255,.08);
+  --green:#22c55e;--green2:#16a34a;--glow:rgba(34,197,94,.22);
+  --red:#f87171;--red-d:rgba(248,113,113,.13);
+  --text:#f1f5f9;--muted:#64748b;--muted2:#94a3b8;
+  --nav:66px;--sb:260px;--r:16px;
+}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--surf2);border-radius:2px;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;}
+
+/* ── Auth screen ── */
+#authScreen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+.auth-box{
+  width:100%;max-width:380px;
+  background:var(--surf);border:1px solid var(--border);border-radius:24px;
+  padding:36px 28px;
+}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;justify-content:center;}
+.auth-logo-txt{font-size:28px;font-weight:900;letter-spacing:-.5px;}
+.auth-logo-txt span{color:var(--green);}
+.auth-tab-row{display:grid;grid-template-columns:1fr 1fr;gap:4px;
+  background:var(--surf2);border-radius:12px;padding:4px;margin-bottom:28px;}
+.auth-tab{
+  padding:10px;border-radius:9px;border:none;background:none;
+  color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:all .15s;
+}
+.auth-tab.on{background:var(--surf);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.auth-form{display:flex;flex-direction:column;gap:14px;}
+.auth-lbl{font-size:11px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
+.auth-inp{
+  width:100%;background:var(--surf2);border:1.5px solid var(--border);
+  border-radius:12px;padding:14px;font-size:16px;font-family:inherit;
+  color:var(--text);outline:none;transition:border-color .15s;
+  -webkit-appearance:none;
+}
+.auth-inp:focus{border-color:var(--green);}
+.auth-inp::placeholder{color:var(--muted);}
+.auth-btn{
+  background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;
+  border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:800;
+  cursor:pointer;font-family:inherit;box-shadow:0 4px 20px var(--glow);
+  transition:opacity .15s;margin-top:4px;
+}
+.auth-btn:active{opacity:.85;}
+.auth-err{color:var(--red);font-size:13px;font-weight:600;text-align:center;
+  background:var(--red-d);border-radius:10px;padding:10px;display:none;}
+.auth-err.on{display:block;}
+
+/* ── Global spinner ── */
+.spin-overlay{
+  position:fixed;inset:0;background:rgba(11,12,20,.8);z-index:900;
+  display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;
+  backdrop-filter:blur(8px);
+}
+.spin-overlay.on{display:flex;}
+.spinner{
+  width:44px;height:44px;border-radius:50%;
+  border:3px solid rgba(34,197,94,.2);border-top-color:var(--green);
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-msg{font-size:14px;font-weight:600;color:var(--muted2);}
+
+/* ── Layout ── */
+.layout{display:flex;min-height:100vh;}
+.sidebar{
+  width:var(--sb);flex-shrink:0;
+  background:var(--surf);border-right:1px solid var(--border);
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  display:flex;flex-direction:column;padding:24px 14px;gap:4px;
+}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:4px 10px 20px;}
+.sb-logo-txt{font-size:22px;font-weight:900;letter-spacing:-.5px;}
+.sb-logo-txt span{color:var(--green);}
+.sb-month{
+  background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px;display:flex;align-items:center;gap:6px;margin-bottom:12px;
+}
+.sbm-btn{
+  width:28px;height:28px;border-radius:50%;border:none;
+  background:rgba(255,255,255,.06);color:var(--muted2);font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:background .15s;
+}
+.sbm-btn:hover{background:rgba(255,255,255,.12);}
+.sbm-label{flex:1;text-align:center;font-size:13px;font-weight:700;}
+.sb-btn{
+  display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;
+  border:none;background:none;color:var(--muted2);font-size:14px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .15s;text-align:left;width:100%;
+}
+.sb-btn:hover{background:var(--surf2);color:var(--text);}
+.sb-btn.on{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.18);}
+.sb-btn .si{font-size:17px;width:22px;text-align:center;flex-shrink:0;}
+.sb-div{height:1px;background:var(--border);margin:8px 0;}
+.sb-small{font-size:11px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.6px;padding:8px 12px 4px;}
+.sb-user{
+  font-size:12px;color:var(--muted);padding:8px 12px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sb-stat{padding:10px 12px;background:var(--surf2);border-radius:12px;margin-top:auto;}
+.sb-stat-label{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px;}
+.sb-stat-val{font-size:18px;font-weight:800;}
+.sb-backup-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;}
+.sb-bk-btn{
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:9px 6px;border-radius:10px;border:1px solid var(--border);
+  background:var(--surf2);color:var(--muted2);font-size:12px;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.sb-bk-btn:hover{background:rgba(34,197,94,.1);color:var(--green);border-color:rgba(34,197,94,.3);}
+
+.main-wrap{flex:1;min-width:0;padding:32px;max-width:760px;}
+.page{display:none;animation:up .2s ease;}
+.page.active{display:block;}
+@keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.mob-hdr{
+  display:none;
+  padding:calc(env(safe-area-inset-top)+14px) 18px 12px;
+  background:linear-gradient(180deg,var(--bg) 60%,transparent);
+  position:sticky;top:0;z-index:20;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.mob-top{display:flex;align-items:center;justify-content:space-between;}
+.mob-logo{display:flex;align-items:center;gap:8px;}
+.mob-logo-txt{font-size:20px;font-weight:900;letter-spacing:-.5px;}
+.mob-logo-txt span{color:var(--green);}
+.mob-txcount{font-size:12px;color:var(--muted);font-weight:600;}
+.mob-month{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.mob-mbtn{
+  width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
+  background:var(--surf2);color:var(--muted2);font-size:17px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.mob-mbtn:active{transform:scale(.9);}
+.mob-mlabel{flex:1;text-align:center;font-size:14px;font-weight:700;}
+
+.mob-nav{
+  display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:640px;
+  height:calc(var(--nav)+env(safe-area-inset-bottom));
+  padding-bottom:env(safe-area-inset-bottom);
+  background:rgba(11,12,20,.9);border-top:1px solid var(--border);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  grid-template-columns:repeat(4,1fr);z-index:100;
+}
+.mn-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  background:none;border:none;cursor:pointer;color:var(--muted);
+  font-size:10px;font-weight:700;letter-spacing:.3px;padding:8px;
+  transition:color .15s;font-family:inherit;
+}
+.mn-btn.on{color:var(--green);}
+.mn-ico{font-size:21px;line-height:1;}
+.mn-btn.add .mn-ico{
+  background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;
+  width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:23px;
+  box-shadow:0 4px 14px var(--glow);
+}
+
+@media(max-width:767px){
+  .layout{flex-direction:column;}
+  .sidebar{display:none;}
+  .main-wrap{max-width:100%;padding:0 0 8px;}
+  .mob-hdr{display:block;}
+  .mob-nav{display:grid;}
+  body{padding-bottom:calc(var(--nav)+env(safe-area-inset-bottom)+8px);}
+}
+@media(min-width:768px) and (max-width:1023px){
+  :root{--sb:220px;}
+  .main-wrap{padding:24px;}
+}
+
+/* ── Components ── */
+.card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:0 2px 16px rgba(0,0,0,.3);}
+.card+.card,.card+.grid2,.grid2+.card{margin-top:12px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid2 .card{padding:16px;}
+.bal{
+  background:linear-gradient(135deg,#0c1a0e,#0a141a);
+  border:1px solid rgba(34,197,94,.2);border-radius:var(--r);padding:24px 22px;margin-bottom:12px;
+  position:relative;overflow:hidden;
+}
+.bal::after{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(34,197,94,.14),transparent 70%);pointer-events:none;}
+.bal-lbl{font-size:11px;font-weight:700;color:rgba(34,197,94,.7);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+.bal-val{font-size:42px;font-weight:900;letter-spacing:-2px;line-height:1;}
+.bal-val.pos{color:var(--green);text-shadow:0 0 40px rgba(34,197,94,.3);}
+.bal-val.neg{color:var(--red);}
+.bal-sub{font-size:12px;color:var(--muted);margin-top:10px;}
+.stat-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
+.stat-val{font-size:22px;font-weight:800;letter-spacing:-.5px;}
+.stat-val.g{color:var(--green);}
+.stat-val.r{color:var(--red);}
+.sec{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:16px;}
+.cat-bars{display:flex;flex-direction:column;gap:13px;}
+.cbar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.cbar-name{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;}
+.cbar-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cbar-val{font-size:13px;font-weight:700;color:var(--muted2);}
+.cbar-track{background:rgba(255,255,255,.05);border-radius:6px;height:5px;overflow:hidden;}
+.cbar-fill{height:5px;border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+.donut-wrap{display:flex;align-items:center;gap:20px;}
+.donut-svg{width:130px;height:130px;flex-shrink:0;}
+.donut-leg{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;}
+.leg-i{display:flex;align-items:center;gap:7px;min-width:0;}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.leg-name{font-size:12px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.leg-pct{font-size:12px;font-weight:700;color:var(--muted2);flex-shrink:0;}
+.top5{display:flex;flex-direction:column;gap:8px;}
+.t5{display:flex;align-items:center;gap:10px;background:var(--surf2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;}
+.t5-rank{font-size:13px;font-weight:800;width:24px;text-align:center;flex-shrink:0;}
+.t5-ico{font-size:19px;flex-shrink:0;}
+.t5-body{flex:1;min-width:0;}
+.t5-desc{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.t5-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.t5-val{font-size:14px;font-weight:800;color:var(--red);flex-shrink:0;}
+.filter-row{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.filter-row::-webkit-scrollbar{display:none;}
+.chip{
+  flex-shrink:0;padding:7px 16px;border:1.5px solid var(--border);border-radius:20px;
+  background:var(--surf);font-size:13px;font-weight:600;cursor:pointer;
+  color:var(--muted);white-space:nowrap;transition:all .15s;font-family:inherit;
+}
+.chip.on{border-color:var(--green);background:rgba(34,197,94,.1);color:var(--green);}
+
+/* Transaction */
+.tx-list{display:flex;flex-direction:column;gap:8px;}
+.tx-wrap{position:relative;overflow:hidden;border-radius:14px;touch-action:pan-y;}
+.tx-del-bg{
+  position:absolute;top:0;right:0;bottom:0;width:90px;
+  background:var(--red);display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:3px;border-radius:14px;
+  font-size:11px;font-weight:700;color:#fff;pointer-events:none;
+}
+.tx-del-bg .dico{font-size:22px;}
+.tx-wrap .tx{position:relative;z-index:1;border-radius:14px;transition:transform .15s ease;will-change:transform;}
+.tx-wrap.swiping .tx{transition:none;}
+.tx{
+  background:var(--surf);border:1px solid var(--border);border-radius:14px;
+  padding:13px 14px;display:flex;align-items:center;gap:10px;transition:transform .1s;
+}
+.tx:active{transform:scale(.99);}
+.tx-ico{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.tx-body{flex:1;min-width:0;}
+.tx-desc{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tx-meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-block;}
+.badge.cc{background:rgba(245,158,11,.15);color:#f59e0b;}
+.badge.deb{background:rgba(100,116,139,.15);color:#94a3b8;}
+.badge.pix{background:rgba(34,197,94,.15);color:#22c55e;}
+.badge.parc{background:rgba(139,92,246,.15);color:#a78bfa;}
+.tx-r{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+.tx-val{font-size:14px;font-weight:800;}
+.tx-val.d{color:var(--red);}
+.tx-val.r{color:var(--green);}
+.tx-x{background:none;border:none;color:rgba(255,255,255,.12);font-size:14px;cursor:pointer;padding:3px 5px;border-radius:6px;transition:color .15s,background .15s;}
+.tx-x:hover,.tx-x:active{color:var(--red);background:var(--red-d);}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty .eico{font-size:48px;margin-bottom:14px;}
+
+/* Form */
+.card-form{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:24px;}
+.form{display:flex;flex-direction:column;gap:18px;}
+.fl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;}
+.togrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.pagrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.tog-btn{
+  padding:12px 8px;border:2px solid var(--border);border-radius:12px;
+  background:var(--surf2);font-size:13px;font-weight:700;cursor:pointer;
+  transition:all .15s;text-align:center;font-family:inherit;color:var(--muted2);
+}
+.tog-btn.d.on{border-color:var(--red);background:var(--red-d);color:var(--red);}
+.tog-btn.r.on{border-color:var(--green);background:rgba(34,197,94,.1);color:var(--green);}
+.tog-btn.on{border-color:var(--green);background:rgba(34,197,94,.1);color:var(--green);}
+.fi{
+  width:100%;background:var(--surf2);border:1.5px solid var(--border);
+  border-radius:12px;padding:13px 14px;font-size:16px;font-family:inherit;
+  color:var(--text);outline:none;transition:border-color .15s;
+  -webkit-appearance:none;appearance:none;
+}
+.fi:focus{border-color:var(--green);}
+.fi::placeholder{color:var(--muted);}
+.fi option{background:#1c1e2e;color:var(--text);}
+.cat-inp-row{display:flex;gap:8px;}
+.cat-inp-row .fi{flex:1;}
+.add-cat-btn{background:var(--surf2);border:1.5px solid var(--border);border-radius:12px;color:var(--green);font-size:20px;padding:0 14px;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.add-cat-btn:hover{background:rgba(34,197,94,.1);}
+.parc-box{background:var(--surf2);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.tgl-row{display:flex;align-items:center;justify-content:space-between;}
+.tgl-label{font-size:14px;font-weight:600;}
+.tgl{position:relative;width:46px;height:26px;cursor:pointer;}
+.tgl input{opacity:0;width:0;height:0;position:absolute;}
+.tgl-track{position:absolute;inset:0;border-radius:13px;background:var(--surf);border:1px solid var(--border);transition:.2s;}
+.tgl input:checked+.tgl-track{background:var(--green);border-color:var(--green);}
+.tgl-thumb{position:absolute;top:4px;left:4px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.3);}
+.tgl input:checked~.tgl-thumb{left:24px;}
+.parc-detail{margin-top:14px;display:none;border-top:1px solid var(--border);padding-top:14px;}
+.parc-detail.show{display:block;}
+.parc-preview{font-size:12px;color:var(--muted2);margin-top:10px;background:var(--surf);border-radius:8px;padding:10px 12px;border:1px solid var(--border);line-height:1.8;}
+.btn-save{
+  background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;
+  border:none;border-radius:14px;padding:17px;font-size:16px;font-weight:800;
+  cursor:pointer;font-family:inherit;box-shadow:0 4px 20px var(--glow);
+  transition:opacity .15s,transform .1s;width:100%;
+}
+.btn-save:active{opacity:.85;transform:scale(.98);}
+
+/* Toast */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(var(--nav)+env(safe-area-inset-bottom)+16px);
+  background:#1e2030;color:var(--text);padding:12px 24px;border-radius:24px;
+  font-size:14px;font-weight:700;z-index:600;
+  opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;
+  border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.toast.on{opacity:1;}
+@media(min-width:768px){.toast{bottom:24px;}}
+
+/* Overlays */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.overlay.on{display:flex;}
+.modal{background:var(--surf);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:8px 20px calc(24px + env(safe-area-inset-bottom));border-top:1px solid var(--border);}
+.modal-handle{width:40px;height:4px;background:var(--surf2);border-radius:2px;margin:12px auto 20px;}
+.modal h3{font-size:18px;font-weight:800;margin-bottom:8px;}
+.modal .sub{font-size:14px;color:var(--muted);margin-bottom:20px;}
+.mbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+.mbtns.three{grid-template-columns:1fr 1fr 1fr;}
+.mbtn{padding:14px;border-radius:14px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.mbtn.cancel{background:var(--surf2);color:var(--text);}
+.mbtn.del{background:var(--red);color:#fff;}
+.mbtn.ok{background:var(--green);color:#fff;}
+.mbtn.warn{background:#f59e0b;color:#fff;}
+.cat-manage-list{max-height:45vh;overflow-y:auto;margin:12px 0;}
+.cat-manage-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.cat-manage-item:last-child{border:none;}
+.cat-manage-name{flex:1;font-size:14px;font-weight:600;}
+.cat-manage-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:color .15s,background .15s;}
+.cat-manage-del:hover{color:var(--red);background:var(--red-d);}
+.cat-manage-del.disabled{opacity:.3;cursor:not-allowed;}
+.cat-section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:12px 0 6px;}
+
+/* Config warning */
+.cfg-warn{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%);
+  background:#f59e0b;color:#000;padding:10px 20px;border-radius:24px;
+  font-size:13px;font-weight:700;z-index:999;text-align:center;
+  box-shadow:0 4px 20px rgba(245,158,11,.4);
+}
+</style>
+</head>
+<body>
+
+<!-- ══ CONFIG WARNING ══ -->
+<div class="cfg-warn" id="cfgWarn" style="display:none">
+  ⚠️ Configure SUPABASE_URL e SUPABASE_KEY no código antes de usar
+</div>
+
+<!-- ══ SPINNER ══ -->
+<div class="spin-overlay" id="spinOverlay">
+  <div class="spinner"></div>
+  <div class="spin-msg" id="spinMsg">Carregando…</div>
+</div>
+
+<!-- ══ AUTH SCREEN ══ -->
+<div id="authScreen" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <svg width="36" height="36" viewBox="0 0 34 34" fill="none">
+        <rect width="34" height="34" rx="10" fill="url(#abg)"/>
+        <defs>
+          <linearGradient id="abg" x1="0" y1="0" x2="34" y2="34">
+            <stop offset="0%" stop-color="#22c55e"/>
+            <stop offset="100%" stop-color="#15803d"/>
+          </linearGradient>
+        </defs>
+        <path d="M8 25 L13 18 L18 21 L26 11" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="26" cy="11" r="2.5" fill="white"/>
+      </svg>
+      <div class="auth-logo-txt">fin<span>.</span></div>
+    </div>
+
+    <div class="auth-tab-row">
+      <button class="auth-tab on" onclick="switchAuthTab('login')">Entrar</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')">Criar conta</button>
+    </div>
+
+    <div class="auth-err" id="authErr"></div>
+
+    <div class="auth-form">
+      <div>
+        <div class="auth-lbl">E-mail</div>
+        <input class="auth-inp" type="email" id="authEmail" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div>
+        <div class="auth-lbl">Senha</div>
+        <input class="auth-inp" type="password" id="authPwd" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()">
+      </div>
+      <div id="authPwdConfirmWrap" style="display:none">
+        <div class="auth-lbl">Confirmar senha</div>
+        <input class="auth-inp" type="password" id="authPwdConfirm" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAuth()">
+      </div>
+      <button class="auth-btn" onclick="doAuth()" id="authSubmitBtn">Entrar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="appScreen" style="display:none">
+<div class="layout">
+
+<!-- Sidebar desktop -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+      <rect width="34" height="34" rx="10" fill="url(#sbg)"/>
+      <defs>
+        <linearGradient id="sbg" x1="0" y1="0" x2="34" y2="34">
+          <stop offset="0%" stop-color="#22c55e"/>
+          <stop offset="100%" stop-color="#15803d"/>
+        </linearGradient>
+      </defs>
+      <path d="M8 25 L13 18 L18 21 L26 11" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="26" cy="11" r="2.5" fill="white"/>
+    </svg>
+    <div class="sb-logo-txt">fin<span>.</span></div>
+  </div>
+  <div class="sb-month">
+    <button class="sbm-btn" onclick="changeMonth(-1)">‹</button>
+    <span class="sbm-label" id="sbMonthLabel"></span>
+    <button class="sbm-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <button class="sb-btn on" onclick="go('dashboard')" id="sb-dashboard"><span class="si">📊</span> Dashboard</button>
+  <button class="sb-btn" onclick="go('relatorios')" id="sb-relatorios"><span class="si">📈</span> Relatórios</button>
+  <button class="sb-btn" onclick="go('novo')" id="sb-novo"><span class="si">＋</span> Novo Lançamento</button>
+  <button class="sb-btn" onclick="go('extrato')" id="sb-extrato"><span class="si">📋</span> Extrato</button>
+  <div class="sb-div"></div>
+  <div class="sb-small">Configurações</div>
+  <button class="sb-btn" onclick="openManageCats()"><span class="si">🏷️</span> Categorias</button>
+  <div class="sb-backup-row">
+    <button class="sb-bk-btn" onclick="exportBackup()">💾 Backup</button>
+    <button class="sb-bk-btn" onclick="document.getElementById('importFile').click()">📥 Importar</button>
+  </div>
+  <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)">
+  <button class="sb-btn" onclick="doLogout()" style="color:var(--red);margin-top:8px"><span class="si">🚪</span> Sair</button>
+  <div class="sb-user" id="sbUser"></div>
+  <div class="sb-stat">
+    <div class="sb-stat-label">Saldo do mês</div>
+    <div class="sb-stat-val" id="sbSaldo">—</div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main-wrap">
+<header class="mob-hdr">
+  <div class="mob-top">
+    <div class="mob-logo">
+      <svg width="30" height="30" viewBox="0 0 34 34" fill="none">
+        <rect width="34" height="34" rx="10" fill="url(#mbg)"/>
+        <defs>
+          <linearGradient id="mbg" x1="0" y1="0" x2="34" y2="34">
+            <stop offset="0%" stop-color="#22c55e"/>
+            <stop offset="100%" stop-color="#15803d"/>
+          </linearGradient>
+        </defs>
+        <path d="M8 25 L13 18 L18 21 L26 11" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="26" cy="11" r="2.5" fill="white"/>
+      </svg>
+      <span class="mob-logo-txt">fin<span>.</span></span>
+    </div>
+    <button style="background:none;border:none;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:8px;background:var(--surf2)" onclick="doLogout()">Sair</button>
+  </div>
+  <div class="mob-month">
+    <button class="mob-mbtn" onclick="changeMonth(-1)">‹</button>
+    <span class="mob-mlabel" id="mobMonthLabel"></span>
+    <button class="mob-mbtn" onclick="changeMonth(1)">›</button>
+  </div>
+</header>
+
+<!-- Dashboard -->
+<div class="page active" id="page-dashboard">
+  <div class="bal">
+    <div class="bal-lbl">Saldo do Mês</div>
+    <div class="bal-val pos" id="saldoVal">R$ 0,00</div>
+    <div class="bal-sub" id="saldoSub"></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="stat-lbl">↑ Receitas</div><div class="stat-val g" id="totalR">R$ 0</div></div>
+    <div class="card"><div class="stat-lbl">↓ Despesas</div><div class="stat-val r" id="totalD">R$ 0</div></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="sec">Por Categoria</div>
+    <div class="cat-bars" id="catBars"></div>
+  </div>
+</div>
+
+<!-- Relatórios -->
+<div class="page" id="page-relatorios">
+  <div class="card" style="margin-bottom:12px">
+    <div class="sec">Distribuição de Despesas</div>
+    <div class="donut-wrap">
+      <svg class="donut-svg" viewBox="0 0 130 130" id="donutSvg"></svg>
+      <div class="donut-leg" id="donutLeg"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="sec">Top 5 Maiores Gastos</div>
+    <div class="top5" id="top5"></div>
+  </div>
+</div>
+
+<!-- Novo -->
+<div class="page" id="page-novo">
+  <div class="card-form">
+    <div class="form">
+      <div>
+        <div class="fl">Tipo</div>
+        <div class="togrow">
+          <button class="tog-btn d on" onclick="setTipo('Despesa')">📤 Despesa</button>
+          <button class="tog-btn r" onclick="setTipo('Receita')">📥 Receita</button>
+        </div>
+      </div>
+      <div>
+        <div class="fl">Data</div>
+        <input type="date" class="fi" id="fData">
+      </div>
+      <div>
+        <div class="fl">Descrição</div>
+        <input type="text" class="fi" id="fDesc" placeholder="Ex: Mercado, Salário…">
+      </div>
+      <div>
+        <div class="fl">Categoria</div>
+        <div class="cat-inp-row">
+          <select class="fi" id="fCat"></select>
+          <button class="add-cat-btn" onclick="openAddCat()" title="Nova categoria">＋</button>
+        </div>
+      </div>
+      <div id="pagSection">
+        <div class="fl">Forma de Pagamento</div>
+        <div class="pagrow">
+          <button class="tog-btn on" onclick="setPag('credito')" id="pagCC">💳 Crédito</button>
+          <button class="tog-btn" onclick="setPag('debito')" id="pagDEB">🏦 Débito</button>
+          <button class="tog-btn" onclick="setPag('pix')" id="pagPIX">⚡ Pix</button>
+        </div>
+      </div>
+      <div class="parc-box" id="parcBox">
+        <div class="tgl-row">
+          <span class="tgl-label">Compra parcelada?</span>
+          <label class="tgl">
+            <input type="checkbox" id="parcToggle" onchange="onParcToggle()">
+            <div class="tgl-track"></div>
+            <div class="tgl-thumb"></div>
+          </label>
+        </div>
+        <div class="parc-detail" id="parcDetail">
+          <div class="fl">Número de parcelas</div>
+          <input type="number" class="fi" id="fParc" min="2" max="36" value="2" oninput="updatePreview()">
+          <div class="parc-preview" id="parcPreview"></div>
+        </div>
+      </div>
+      <div>
+        <div class="fl" id="valLabel">Valor (R$)</div>
+        <input type="number" class="fi" id="fVal" placeholder="0,00" step="0.01" min="0" inputmode="decimal" oninput="updatePreview()">
+      </div>
+      <button class="btn-save" onclick="salvar()" id="btnSalvar">Salvar Lançamento →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Extrato -->
+<div class="page" id="page-extrato">
+  <div class="filter-row" id="filterRow"></div>
+  <div class="tx-list" id="txList"></div>
+</div>
+
+</div><!-- /main-wrap -->
+</div><!-- /layout -->
+
+<nav class="mob-nav">
+  <button class="mn-btn on" onclick="go('dashboard')" id="mn-dashboard"><span class="mn-ico">📊</span>Início</button>
+  <button class="mn-btn" onclick="go('relatorios')" id="mn-relatorios"><span class="mn-ico">📈</span>Relatórios</button>
+  <button class="mn-btn add" onclick="go('novo')" id="mn-novo"><span class="mn-ico">＋</span>Novo</button>
+  <button class="mn-btn" onclick="go('extrato')" id="mn-extrato"><span class="mn-ico">📋</span>Extrato</button>
+</nav>
+</div><!-- /appScreen -->
+
+<div class="toast" id="toast"></div>
+
+<!-- Delete modal -->
+<div class="overlay" id="delOverlay" onclick="closeOverlay('delOverlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h3>Excluir lançamento?</h3>
+    <p class="sub" id="delDesc"></p>
+    <div class="mbtns" id="delBtns"></div>
+  </div>
+</div>
+
+<!-- Add category modal -->
+<div class="overlay" id="catOverlay" onclick="closeOverlay('catOverlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h3>Nova Categoria</h3>
+    <div class="form" style="margin-bottom:16px">
+      <div>
+        <div class="fl">Tipo</div>
+        <div class="togrow">
+          <button class="tog-btn d on" id="catTipoD" onclick="setCatTipo('Despesa')">📤 Despesa</button>
+          <button class="tog-btn r" id="catTipoR" onclick="setCatTipo('Receita')">📥 Receita</button>
+        </div>
+      </div>
+      <div>
+        <div class="fl">Nome</div>
+        <input type="text" class="fi" id="catNome" placeholder="Ex: Educação, Lazer…">
+      </div>
+    </div>
+    <div class="mbtns">
+      <button class="mbtn cancel" onclick="closeOverlay('catOverlay')">Cancelar</button>
+      <button class="mbtn ok" onclick="saveNewCat()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage categories modal -->
+<div class="overlay" id="manageCatOverlay" onclick="closeOverlay('manageCatOverlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h3>Gerenciar Categorias</h3>
+    <div id="manageCatContent" class="cat-manage-list"></div>
+    <button class="btn-save" style="padding:14px;margin-top:4px" onclick="closeOverlay('manageCatOverlay')">Fechar</button>
+  </div>
+</div>
+
+<!-- ════ SUPABASE SDK ════ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ╔══════════════════════════════════════════╗
+// ║  ⚙️  CONFIGURAÇÃO — PREENCHA AQUI       ║
+// ╚══════════════════════════════════════════╝
+const SUPABASE_URL = 'https://dlndkrlcvmtirfwqiaos.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_bbLOUZjTd5c2PMd8RXKszw_bITygRFE';
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const MES    = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+const MES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DEFAULT_CATS_D = ['(D) Alimentação','(D) Carro','(D) Doação','(D) Gasolina','(D) Geral','(D) Manutenção','(D) Pessoal','(D) Planos','(D) Presentes','(D) Roupas'];
+const DEFAULT_CATS_R = ['Salário','(D) Devolução','Outros'];
+const CAT_COLORS = {
+  '(D) Alimentação':'#f59e0b','(D) Carro':'#3b82f6','(D) Doação':'#ec4899',
+  '(D) Gasolina':'#f97316','(D) Geral':'#8b5cf6','(D) Manutenção':'#06b6d4',
+  '(D) Pessoal':'#10b981','(D) Planos':'#6366f1','(D) Presentes':'#f43f5e',
+  '(D) Roupas':'#84cc16','(D) Devolução':'#22c55e','Salário':'#22c55e','Outros':'#64748b'
+};
+const ICONS = {
+  '(D) Alimentação':'🍽️','(D) Carro':'🚗','(D) Doação':'❤️','(D) Gasolina':'⛽',
+  '(D) Geral':'📦','(D) Manutenção':'🔧','(D) Pessoal':'👤','(D) Planos':'📱',
+  '(D) Presentes':'🎁','(D) Roupas':'👕','(D) Devolução':'↩️','Salário':'💼','Outros':'💰'
+};
+
+// Seed data (da planilha original — carregado apenas na primeira entrada)
+const SEED=[{"id":"1","data":"2026-01-01","mes":"JAN","descricao":"Investidor 10","tipo":"Despesa","categoria":"(D) Planos","receita":0,"despesa":19.9,"pagamento":"debito"},{"id":"2","data":"2026-02-01","mes":"FEV","descricao":"Investidor 10","tipo":"Despesa","categoria":"(D) Planos","receita":0,"despesa":19.9,"pagamento":"debito"},{"id":"3","data":"2026-03-01","mes":"MAR","descricao":"Investidor 10","tipo":"Despesa","categoria":"(D) Planos","receita":0,"despesa":19.9,"pagamento":"debito"},{"id":"4","data":"2026-04-01","mes":"ABR","descricao":"Investidor 10","tipo":"Despesa","categoria":"(D) Planos","receita":0,"despesa":19.9,"pagamento":"debito"},{"id":"5","data":"2026-01-01","mes":"JAN","descricao":"Calça bege","tipo":"Despesa","categoria":"(D) Roupas","receita":0,"despesa":49.99,"pagamento":"credito"},{"id":"6","data":"2026-02-01","mes":"FEV","descricao":"Calça bege","tipo":"Despesa","categoria":"(D) Roupas","receita":0,"despesa":49.99,"pagamento":"credito"},{"id":"7","data":"2026-01-01","mes":"JAN","descricao":"Ajuste","tipo":"Despesa","categoria":"(D) Geral","receita":0,"despesa":94.66,"pagamento":"debito"},{"id":"8","data":"2026-01-01","mes":"JAN","descricao":"Perfume","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":100,"pagamento":"credito"},{"id":"9","data":"2026-02-01","mes":"FEV","descricao":"Perfume","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":100,"pagamento":"credito"},{"id":"10","data":"2026-01-01","mes":"JAN","descricao":"Presentes","tipo":"Despesa","categoria":"(D) Presentes","receita":0,"despesa":66.66,"pagamento":"pix"},{"id":"11","data":"2026-02-01","mes":"FEV","descricao":"Presentes","tipo":"Despesa","categoria":"(D) Presentes","receita":0,"despesa":66.66,"pagamento":"pix"},{"id":"12","data":"2026-01-01","mes":"JAN","descricao":"Gasolina","tipo":"Despesa","categoria":"(D) Gasolina","receita":0,"despesa":254.22,"pagamento":"debito"},{"id":"13","data":"2026-01-01","mes":"JAN","descricao":"Café da manhã","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":47,"pagamento":"pix"},{"id":"14","data":"2026-01-01","mes":"JAN","descricao":"formatura","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":24,"pagamento":"pix"},{"id":"15","data":"2026-01-01","mes":"JAN","descricao":"PAIOL","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":80,"pagamento":"pix"},{"id":"16","data":"2026-01-04","mes":"JAN","descricao":"Gasolina","tipo":"Despesa","categoria":"(D) Gasolina","receita":0,"despesa":87.99,"pagamento":"debito"},{"id":"17","data":"2026-01-01","mes":"JAN","descricao":"Manutenção Gol","tipo":"Despesa","categoria":"(D) Manutenção","receita":0,"despesa":365,"pagamento":"pix"},{"id":"18","data":"2026-02-01","mes":"FEV","descricao":"Manutenção Gol","tipo":"Despesa","categoria":"(D) Manutenção","receita":0,"despesa":365,"pagamento":"pix"},{"id":"19","data":"2026-01-07","mes":"JAN","descricao":"Alimentação","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":37.98,"pagamento":"pix"},{"id":"20","data":"2026-01-08","mes":"JAN","descricao":"Mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":429.52,"pagamento":"debito"},{"id":"21","data":"2026-01-09","mes":"JAN","descricao":"Mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":125.11,"pagamento":"debito"},{"id":"22","data":"2026-01-10","mes":"JAN","descricao":"Almoço raizes","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":41.9,"pagamento":"pix"},{"id":"23","data":"2026-01-11","mes":"JAN","descricao":"Bazar preço certo","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":40.95,"pagamento":"credito"},{"id":"24","data":"2026-01-12","mes":"JAN","descricao":"Geral","tipo":"Despesa","categoria":"(D) Geral","receita":0,"despesa":46,"pagamento":"debito"},{"id":"25","data":"2026-01-13","mes":"JAN","descricao":"Mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":55.53,"pagamento":"pix"},{"id":"26","data":"2026-01-14","mes":"JAN","descricao":"Corte de cabelo","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":63,"pagamento":"pix"},{"id":"27","data":"2026-01-15","mes":"JAN","descricao":"Plano Apple","tipo":"Despesa","categoria":"(D) Planos","receita":0,"despesa":5.9,"pagamento":"credito"},{"id":"28","data":"2026-01-16","mes":"JAN","descricao":"Padaria","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":22,"pagamento":"pix"},{"id":"29","data":"2026-01-17","mes":"JAN","descricao":"Padel","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":53,"pagamento":"pix"},{"id":"30","data":"2026-01-18","mes":"JAN","descricao":"Pizza","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":162,"pagamento":"credito"},{"id":"31","data":"2026-01-19","mes":"JAN","descricao":"Baada","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":128,"pagamento":"credito"},{"id":"32","data":"2026-01-20","mes":"JAN","descricao":"Gasolina","tipo":"Despesa","categoria":"(D) Gasolina","receita":0,"despesa":294.04,"pagamento":"debito"},{"id":"33","data":"2026-01-21","mes":"JAN","descricao":"Cafeteria","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":10,"pagamento":"pix"},{"id":"34","data":"2026-01-22","mes":"JAN","descricao":"Mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":190.17,"pagamento":"debito"},{"id":"35","data":"2026-01-23","mes":"JAN","descricao":"Bazar preço certo","tipo":"Despesa","categoria":"(D) Geral","receita":0,"despesa":4.45,"pagamento":"credito"},{"id":"36","data":"2026-01-24","mes":"JAN","descricao":"Presentes","tipo":"Despesa","categoria":"(D) Presentes","receita":0,"despesa":89.99,"pagamento":"pix"},{"id":"37","data":"2026-01-25","mes":"JAN","descricao":"Raizes","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":10,"pagamento":"pix"},{"id":"38","data":"2026-01-26","mes":"JAN","descricao":"Fratelli","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":246,"pagamento":"credito"},{"id":"39","data":"2026-01-27","mes":"JAN","descricao":"Padel","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":49.9,"pagamento":"pix"},{"id":"40","data":"2026-01-28","mes":"JAN","descricao":"Churrasco","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":36.58,"pagamento":"pix"},{"id":"41","data":"2026-01-29","mes":"JAN","descricao":"Churrasco","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":196.97,"pagamento":"pix"},{"id":"42","data":"2026-01-30","mes":"JAN","descricao":"Almoço novo mundo","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":169,"pagamento":"credito"},{"id":"43","data":"2026-01-31","mes":"JAN","descricao":"Bazar preço certo","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":82.94,"pagamento":"credito"},{"id":"44","data":"2026-02-01","mes":"FEV","descricao":"Churrasco","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":47.71,"pagamento":"pix"},{"id":"45","data":"2026-02-02","mes":"FEV","descricao":"Gasolina","tipo":"Despesa","categoria":"(D) Gasolina","receita":0,"despesa":96.93,"pagamento":"debito"},{"id":"46","data":"2026-02-03","mes":"FEV","descricao":"Baada","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":72,"pagamento":"credito"},{"id":"47","data":"2026-02-04","mes":"FEV","descricao":"PADEL","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":73,"pagamento":"pix"},{"id":"48","data":"2026-02-05","mes":"FEV","descricao":"Padaria","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":25.53,"pagamento":"pix"},{"id":"49","data":"2026-02-06","mes":"FEV","descricao":"Posto","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":12,"pagamento":"pix"},{"id":"50","data":"2026-02-07","mes":"FEV","descricao":"Mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":98.55,"pagamento":"debito"},{"id":"51","data":"2026-02-08","mes":"FEV","descricao":"Mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":31.97,"pagamento":"debito"},{"id":"52","data":"2026-02-09","mes":"FEV","descricao":"Oculos de sol","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":102.67,"pagamento":"credito"},{"id":"53","data":"2026-03-01","mes":"MAR","descricao":"Oculos de sol","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":102.67,"pagamento":"credito"},{"id":"54","data":"2026-04-11","mes":"ABR","descricao":"Oculos de sol","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":102.67,"pagamento":"credito"},{"id":"55","data":"2026-02-12","mes":"FEV","descricao":"GERAL","tipo":"Despesa","categoria":"(D) Geral","receita":0,"despesa":8,"pagamento":"pix"},{"id":"56","data":"2026-02-13","mes":"FEV","descricao":"Geral","tipo":"Despesa","categoria":"(D) Geral","receita":0,"despesa":19.98,"pagamento":"pix"},{"id":"57","data":"2026-02-14","mes":"FEV","descricao":"Camisa branca ano novo","tipo":"Despesa","categoria":"(D) Roupas","receita":0,"despesa":99.99,"pagamento":"credito"},{"id":"58","data":"2026-02-15","mes":"FEV","descricao":"Geral","tipo":"Despesa","categoria":"(D) Geral","receita":0,"despesa":24.97,"pagamento":"pix"},{"id":"59","data":"2026-02-16","mes":"FEV","descricao":"Almoço xis do andré","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":88,"pagamento":"pix"},{"id":"60","data":"2026-02-17","mes":"FEV","descricao":"Mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":58.68,"pagamento":"debito"},{"id":"61","data":"2026-02-18","mes":"FEV","descricao":"Mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":8.98,"pagamento":"debito"},{"id":"62","data":"2026-02-19","mes":"FEV","descricao":"Fármacia","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":6.99,"pagamento":"pix"},{"id":"63","data":"2026-02-20","mes":"FEV","descricao":"Mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":5.98,"pagamento":"debito"},{"id":"64","data":"2026-02-21","mes":"FEV","descricao":"Guarda Sol","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":100,"pagamento":"credito"},{"id":"65","data":"2026-02-22","mes":"FEV","descricao":"Beach tenis","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":12,"pagamento":"pix"},{"id":"66","data":"2026-02-23","mes":"FEV","descricao":"Mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":40.38,"pagamento":"debito"},{"id":"67","data":"2026-02-24","mes":"FEV","descricao":"Mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":166,"pagamento":"debito"},{"id":"68","data":"2026-02-25","mes":"FEV","descricao":"energetico","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":7.98,"pagamento":"pix"},{"id":"69","data":"2026-02-26","mes":"FEV","descricao":"Pizza","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":178,"pagamento":"credito"},{"id":"70","data":"2026-02-27","mes":"FEV","descricao":"Padaria","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":23,"pagamento":"pix"},{"id":"71","data":"2026-02-28","mes":"FEV","descricao":"Padaria","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":42.5,"pagamento":"pix"},{"id":"72","data":"2026-03-01","mes":"MAR","descricao":"MERCADO","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":320.94,"pagamento":"debito"},{"id":"73","data":"2026-03-02","mes":"MAR","descricao":"COMIDA","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":9,"pagamento":"pix"},{"id":"74","data":"2026-03-03","mes":"MAR","descricao":"CORTE DE CABELO","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":35,"pagamento":"pix"},{"id":"75","data":"2026-03-04","mes":"MAR","descricao":"POKE","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":73,"pagamento":"pix"},{"id":"76","data":"2026-03-05","mes":"MAR","descricao":"CARNE PRAIA","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":118.34,"pagamento":"pix"},{"id":"77","data":"2026-03-06","mes":"MAR","descricao":"Praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":30,"pagamento":"pix"},{"id":"78","data":"2026-03-07","mes":"MAR","descricao":"praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":4.99,"pagamento":"pix"},{"id":"81","data":"2026-03-10","mes":"MAR","descricao":"praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":14.98,"pagamento":"pix"},{"id":"82","data":"2026-03-11","mes":"MAR","descricao":"GASOLINA","tipo":"Despesa","categoria":"(D) Gasolina","receita":0,"despesa":277.54,"pagamento":"debito"},{"id":"83","data":"2026-03-12","mes":"MAR","descricao":"Praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":99.7,"pagamento":"pix"},{"id":"84","data":"2026-03-13","mes":"MAR","descricao":"Praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":8,"pagamento":"pix"},{"id":"85","data":"2026-03-14","mes":"MAR","descricao":"Presente","tipo":"Despesa","categoria":"(D) Presentes","receita":0,"despesa":93,"pagamento":"pix"},{"id":"86","data":"2026-04-15","mes":"ABR","descricao":"Presente","tipo":"Despesa","categoria":"(D) Presentes","receita":0,"despesa":93,"pagamento":"pix"},{"id":"87","data":"2026-05-16","mes":"MAI","descricao":"Presente","tipo":"Despesa","categoria":"(D) Presentes","receita":0,"despesa":93,"pagamento":"pix"},{"id":"88","data":"2026-03-17","mes":"MAR","descricao":"praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":42,"pagamento":"pix"},{"id":"89","data":"2026-03-18","mes":"MAR","descricao":"praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":304.67,"pagamento":"credito"},{"id":"90","data":"2026-03-19","mes":"MAR","descricao":"praia","tipo":"Despesa","categoria":"(D) Roupas","receita":0,"despesa":89.99,"pagamento":"credito"},{"id":"91","data":"2026-03-20","mes":"MAR","descricao":"praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":100,"pagamento":"pix"},{"id":"92","data":"2026-03-21","mes":"MAR","descricao":"praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":100,"pagamento":"pix"},{"id":"93","data":"2026-03-22","mes":"MAR","descricao":"praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":16,"pagamento":"pix"},{"id":"94","data":"2026-03-23","mes":"MAR","descricao":"motinho praia","tipo":"Despesa","categoria":"(D) Pessoal","receita":0,"despesa":150,"pagamento":"pix"},{"id":"95","data":"2026-03-24","mes":"MAR","descricao":"praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":28,"pagamento":"pix"},{"id":"96","data":"2026-03-25","mes":"MAR","descricao":"praia","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":18,"pagamento":"pix"},{"id":"97","data":"2026-03-26","mes":"MAR","descricao":"gasolina kangoo","tipo":"Despesa","categoria":"(D) Gasolina","receita":0,"despesa":20,"pagamento":"debito"},{"id":"98","data":"2026-03-27","mes":"MAR","descricao":"mercado","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":142.75,"pagamento":"debito"},{"id":"99","data":"2026-03-28","mes":"MAR","descricao":"PPF CARRO","tipo":"Despesa","categoria":"(D) Carro","receita":0,"despesa":1050,"pagamento":"credito"},{"id":"100","data":"2026-04-29","mes":"ABR","descricao":"PPF CARRO","tipo":"Despesa","categoria":"(D) Carro","receita":0,"despesa":1050,"pagamento":"credito"},{"id":"101","data":"2026-03-30","mes":"MAR","descricao":"padel","tipo":"Despesa","categoria":"(D) Geral","receita":0,"despesa":33,"pagamento":"pix"},{"id":"102","data":"2026-03-31","mes":"MAR","descricao":"poke","tipo":"Despesa","categoria":"(D) Alimentação","receita":0,"despesa":73,"pagamento":"pix"},{"id":"260","data":"2026-02-28","mes":"FEV","descricao":"Seguro do carro","tipo":"Despesa","categoria":"(D) Carro","receita":0,"despesa":223.04,"pagamento":"debito"},{"id":"261","data":"2026-03-01","mes":"MAR","descricao":"Seguro do carro","tipo":"Despesa","categoria":"(D) Carro","receita":0,"despesa":223.04,"pagamento":"debito"},{"id":"262","data":"2026-04-28","mes":"ABR","descricao":"Seguro do carro","tipo":"Despesa","categoria":"(D) Carro","receita":0,"despesa":223.04,"pagamento":"debito"},{"id":"263","data":"2026-05-28","mes":"MAI","descricao":"Seguro do carro","tipo":"Despesa","categoria":"(D) Carro","receita":0,"despesa":223.04,"pagamento":"debito"},{"id":"264","data":"2026-06-28","mes":"JUN","descricao":"Seguro do carro","tipo":"Despesa","categoria":"(D) Carro","receita":0,"despesa":223.04,"pagamento":"debito"},{"id":"265","data":"2026-07-28","mes":"JUL","descricao":"Seguro do carro","tipo":"Despesa","categoria":"(D) Carro","receita":0,"despesa":223.04,"pagamento":"debito"},{"id":"283","data":"2026-02-01","mes":"FEV","descricao":"devolução","tipo":"Receita","categoria":"(D) Devolução","receita":391.35,"despesa":0,"pagamento":"pix"}];
+
+// ════════════════════════════════════════════
+//  SUPABASE CLIENT
+// ════════════════════════════════════════════
+let _sb = null;
+function initSupabase(){
+  if(SUPABASE_URL.includes('COLE_AQUI') || SUPABASE_KEY.includes('COLE_AQUI')){
+    document.getElementById('cfgWarn').style.display='block';
+    return false;
+  }
+  _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  return true;
+}
+
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+let dados=[], catData={d:[...DEFAULT_CATS_D],r:[...DEFAULT_CATS_R]};
+let curY=new Date().getFullYear(), curM=new Date().getMonth();
+let curPage='dashboard', filterTipo='Todos';
+let delId=null;
+let formTipo='Despesa', formPag='credito', catTipoModal='Despesa';
+let currentUser=null;
+
+// ════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════
+const Rfmt=n=>'R$ '+Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function monthData(){const m=MES[curM],y=String(curY);return dados.filter(d=>d.mes===m&&d.data&&d.data.startsWith(y));}
+function addMonths(dateStr,n){const[y,mo,d]=dateStr.split('-').map(Number);const dt=new Date(y,mo-1+n,d);return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;}
+function catColor(cat){return CAT_COLORS[cat]||('#'+Math.abs([...cat].reduce((h,c)=>Math.imul(31,h)+c.charCodeAt(0)|0,0)).toString(16).padStart(6,'0').slice(0,6));}
+function catIcon(cat){return ICONS[cat]||'🏷️';}
+function pagBadge(pag){
+  if(pag==='credito')return '<span class="badge cc">💳 CC</span>';
+  if(pag==='pix')return '<span class="badge pix">⚡ Pix</span>';
+  return '<span class="badge deb">🏦 Déb</span>';
+}
+function spin(on,msg='Carregando…'){const o=document.getElementById('spinOverlay');o.classList.toggle('on',on);document.getElementById('spinMsg').textContent=msg;}
+let _tt;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('on'),2800);}
+function closeOverlay(id){document.getElementById(id).classList.remove('on');}
+
+// ════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════
+let authMode='login';
+function switchAuthTab(mode){
+  authMode=mode;
+  document.querySelectorAll('.auth-tab').forEach((b,i)=>b.classList.toggle('on',(mode==='login'&&i===0)||(mode==='signup'&&i===1)));
+  document.getElementById('authSubmitBtn').textContent=mode==='login'?'Entrar →':'Criar conta →';
+  document.getElementById('authPwdConfirmWrap').style.display=mode==='signup'?'':'none';
+  document.getElementById('authErr').classList.remove('on');
+}
+async function doAuth(){
+  const email=document.getElementById('authEmail').value.trim();
+  const pwd=document.getElementById('authPwd').value;
+  const err=document.getElementById('authErr');
+  err.classList.remove('on');
+  if(!email||!pwd){err.textContent='Preencha e-mail e senha';err.classList.add('on');return;}
+  if(authMode==='signup'){
+    const confirm=document.getElementById('authPwdConfirm').value;
+    if(pwd!==confirm){err.textContent='As senhas não coincidem';err.classList.add('on');return;}
+    if(pwd.length<6){err.textContent='Senha mínima de 6 caracteres';err.classList.add('on');return;}
+  }
+  spin(true,authMode==='login'?'Entrando…':'Criando conta…');
+  const{data,error}=authMode==='login'
+    ?await _sb.auth.signInWithPassword({email,password:pwd})
+    :await _sb.auth.signUp({email,password:pwd});
+  spin(false);
+  if(error){err.textContent=translateAuthError(error.message);err.classList.add('on');return;}
+  if(authMode==='signup'&&data.user&&!data.session){
+    err.style.color='var(--green)';err.textContent='✓ Conta criada! Verifique seu e-mail para confirmar.';err.classList.add('on');return;
+  }
+  onLogin(data.user);
+}
+function translateAuthError(msg){
+  if(msg.includes('Invalid login'))return 'E-mail ou senha incorretos';
+  if(msg.includes('Email not confirmed'))return 'Confirme seu e-mail antes de entrar';
+  if(msg.includes('already registered'))return 'E-mail já cadastrado';
+  return msg;
+}
+async function doLogout(){
+  await _sb.auth.signOut();
+  currentUser=null;dados=[];catData={d:[...DEFAULT_CATS_D],r:[...DEFAULT_CATS_R]};
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('authScreen').style.display='';
+  switchAuthTab('login');
+}
+function onLogin(user){
+  currentUser=user;
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('appScreen').style.display='';
+  document.getElementById('sbUser').textContent=user.email;
+  loadUserData();
+}
+
+// ════════════════════════════════════════════
+//  DATA LOADING
+// ════════════════════════════════════════════
+async function loadUserData(){
+  spin(true,'Carregando dados…');
+  await Promise.all([loadTransactions(), loadCustomCats()]);
+  spin(false);
+  updateLabels();
+  renderDash();
+  initForm();
+}
+async function loadTransactions(){
+  const{data,error}=await _sb.from('transactions').select('*').order('data',{ascending:false});
+  if(error){toast('Erro ao carregar dados');return;}
+  if(data.length===0){
+    // First login — offer to import seed
+    dados=[];
+    await importSeedData();
+  } else {
+    dados=data.map(dbToLocal);
+  }
+}
+function dbToLocal(r){
+  return{
+    id:r.id,data:r.data,mes:r.mes,descricao:r.descricao,tipo:r.tipo,
+    categoria:r.categoria,receita:+r.receita,despesa:+r.despesa,
+    pagamento:r.pagamento||'debito',
+    parcelas:r.parcelas||1,parcelaAtual:r.parcela_atual||1,
+    grupoId:r.grupo_id||null
+  };
+}
+function localToDb(t,userId){
+  return{
+    id:t.id,user_id:userId,data:t.data,mes:t.mes,descricao:t.descricao,
+    tipo:t.tipo,categoria:t.categoria,receita:t.receita,despesa:t.despesa,
+    pagamento:t.pagamento,parcelas:t.parcelas||1,
+    parcela_atual:t.parcelaAtual||1,grupo_id:t.grupoId||null
+  };
+}
+async function importSeedData(){
+  spin(true,'Importando dados iniciais…');
+  const rows=SEED.map(d=>localToDb({...d,parcelas:1,parcelaAtual:1,grupoId:null},currentUser.id));
+  // Insert in batches of 50
+  for(let i=0;i<rows.length;i+=50){
+    await _sb.from('transactions').insert(rows.slice(i,i+50));
+  }
+  dados=SEED.map(d=>({...d,parcelas:1,parcelaAtual:1,grupoId:null}));
+  spin(false);
+  toast('✓ Dados importados da planilha!');
+}
+async function loadCustomCats(){
+  const{data}=await _sb.from('custom_categories').select('*');
+  if(!data||!data.length)return;
+  const d=[...DEFAULT_CATS_D];
+  const r=[...DEFAULT_CATS_R];
+  data.forEach(c=>{
+    if(c.tipo==='Despesa'&&!d.includes(c.nome))d.push(c.nome);
+    else if(c.tipo==='Receita'&&!r.includes(c.nome))r.push(c.nome);
+  });
+  catData={d,r};
+}
+
+// ════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════
+function go(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.mn-btn,.sb-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('mn-'+name)?.classList.add('on');
+  document.getElementById('sb-'+name)?.classList.add('on');
+  curPage=name;
+  ({dashboard:renderDash,relatorios:renderReports,novo:initForm,extrato:renderExtrato}[name]||(() =>{}))();
+}
+function updateLabels(){
+  const lbl=MES_PT[curM]+' '+curY;
+  document.getElementById('sbMonthLabel').textContent=lbl;
+  document.getElementById('mobMonthLabel').textContent=lbl;
+}
+function changeMonth(d){
+  curM+=d;if(curM>11){curM=0;curY++;}if(curM<0){curM=11;curY--;}
+  updateLabels();
+  ({dashboard:renderDash,relatorios:renderReports,extrato:renderExtrato}[curPage]||(() =>{}))();
+}
+
+// ════════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════════
+function renderDash(){
+  const md=monthData();
+  const tR=md.reduce((s,d)=>s+d.receita,0);
+  const tD=md.reduce((s,d)=>s+d.despesa,0);
+  const saldo=tR-tD;
+  const sv=document.getElementById('saldoVal');
+  sv.textContent=Rfmt(saldo);sv.className='bal-val '+(saldo>=0?'pos':'neg');
+  document.getElementById('saldoSub').textContent=`${md.filter(d=>d.tipo==='Despesa').length} despesas · ${md.filter(d=>d.tipo==='Receita').length} receitas`;
+  document.getElementById('totalR').textContent=Rfmt(tR);
+  document.getElementById('totalD').textContent=Rfmt(tD);
+  const ss=document.getElementById('sbSaldo');
+  ss.textContent=Rfmt(saldo);ss.style.color=saldo>=0?'var(--green)':'var(--red)';
+  const cs={};
+  md.filter(d=>d.tipo==='Despesa').forEach(d=>{cs[d.categoria]=(cs[d.categoria]||0)+d.despesa;});
+  const sorted=Object.entries(cs).sort((a,b)=>b[1]-a[1]);
+  const max=sorted[0]?.[1]||1;
+  document.getElementById('catBars').innerHTML=sorted.length
+    ?sorted.map(([cat,val])=>{const c=catColor(cat);return`<div><div class="cbar-top"><span class="cbar-name"><span class="cbar-dot" style="background:${c}"></span>${catIcon(cat)} ${cat.replace('(D) ','')}</span><span class="cbar-val">${Rfmt(val)}</span></div><div class="cbar-track"><div class="cbar-fill" style="width:${(val/max*100).toFixed(1)}%;background:${c}"></div></div></div>`;}).join('')
+    :'<p style="color:var(--muted);text-align:center;padding:16px 0;font-size:14px">Nenhuma despesa neste mês</p>';
+}
+
+// ════════════════════════════════════════════
+//  REPORTS
+// ════════════════════════════════════════════
+function renderReports(){
+  const md=monthData();
+  const catMap={};
+  md.filter(d=>d.tipo==='Despesa').forEach(d=>{catMap[d.categoria]=(catMap[d.categoria]||0)+d.despesa;});
+  const sorted=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
+  const total=sorted.reduce((s,[,v])=>s+v,0);
+  const cx=65,cy=65,rr=48,sw=20,C=2*Math.PI*rr;
+  let off=0;
+  const segs=sorted.map(([cat,val])=>{const color=catColor(cat);const len=(val/total)*C;const seg=`<circle cx="${cx}" cy="${cy}" r="${rr}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-dasharray="${len} ${C}" stroke-dashoffset="${-(off-C/4)}" transform="rotate(-90 ${cx} ${cy})"/>`;off+=len;return seg;});
+  const pct=sorted.length?((sorted[0][1]/total)*100).toFixed(0)+'%':'—';
+  const lbl=sorted.length?sorted[0][0].replace('(D) ',''):'';
+  document.getElementById('donutSvg').innerHTML=(sorted.length?segs.join(''):`<circle cx="${cx}" cy="${cy}" r="${rr}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="${sw}"/>`)
+    +`<text x="${cx}" y="${cy-6}" text-anchor="middle" fill="#f1f5f9" font-size="18" font-weight="900" font-family="-apple-system,sans-serif">${pct}</text><text x="${cx}" y="${cy+12}" text-anchor="middle" fill="#64748b" font-size="10" font-weight="600" font-family="-apple-system,sans-serif">${lbl}</text>`;
+  document.getElementById('donutLeg').innerHTML=sorted.slice(0,5).map(([cat,val])=>`<div class="leg-i"><span class="leg-dot" style="background:${catColor(cat)}"></span><span class="leg-name">${cat.replace('(D) ','')}</span><span class="leg-pct">${total?((val/total)*100).toFixed(1):'0'}%</span></div>`).join('')||'<p style="color:var(--muted);font-size:13px">Sem dados</p>';
+  const top=md.filter(d=>d.tipo==='Despesa').sort((a,b)=>b.despesa-a.despesa).slice(0,5);
+  const medals=['🥇','🥈','🥉','4º','5º'];
+  document.getElementById('top5').innerHTML=top.length?top.map((d,i)=>`<div class="t5"><div class="t5-rank">${medals[i]}</div><div class="t5-ico">${catIcon(d.categoria)}</div><div class="t5-body"><div class="t5-desc">${d.descricao}</div><div class="t5-meta">${d.categoria.replace('(D) ','')} · ${d.data.split('-').reverse().slice(0,2).join('/')}</div></div><div class="t5-val">- ${Rfmt(d.despesa)}</div></div>`).join(''):'<p style="color:var(--muted);text-align:center;padding:16px;font-size:14px">Sem despesas neste mês</p>';
+}
+
+// ════════════════════════════════════════════
+//  EXTRATO
+// ════════════════════════════════════════════
+function renderExtrato(){
+  const md=monthData();
+  document.getElementById('filterRow').innerHTML=['Todos','Despesa','Receita'].map(t=>`<button class="chip${filterTipo===t?' on':''}" onclick="setFilter('${t}')">${t}</button>`).join('');
+  const filtered=filterTipo==='Todos'?md:md.filter(d=>d.tipo===filterTipo);
+  const sorted=[...filtered].sort((a,b)=>b.data.localeCompare(a.data));
+  const list=document.getElementById('txList');
+  if(!sorted.length){list.innerHTML='<div class="empty"><div class="eico">📭</div><p>Nenhum lançamento neste mês</p></div>';return;}
+  list.innerHTML=sorted.map(d=>{
+    const val=d.tipo==='Despesa'?d.despesa:d.receita;
+    const cls=d.tipo==='Despesa'?'d':'r';
+    const prefix=d.tipo==='Despesa'?'- ':'+ ';
+    const color=catColor(d.categoria);
+    const[,mo,day]=d.data.split('-');
+    const dEsc=d.descricao.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const hasGroup=d.grupoId&&d.parcelas>1;
+    const parcBadge=hasGroup?`<span class="badge parc">${d.parcelaAtual}/${d.parcelas}</span>`:'';
+    const pag=d.pagamento||'debito';
+    return`<div class="tx-wrap" data-id="${d.id}" data-desc="${dEsc}" data-group="${hasGroup}">
+      <div class="tx-del-bg"><span class="dico">🗑️</span>Excluir</div>
+      <div class="tx">
+        <div class="tx-ico" style="background:${color}22">${catIcon(d.categoria)}</div>
+        <div class="tx-body">
+          <div class="tx-desc">${d.descricao}</div>
+          <div class="tx-meta">${d.categoria.replace('(D) ','')} · ${day}/${mo} ${pagBadge(pag)} ${parcBadge}</div>
+        </div>
+        <div class="tx-r">
+          <span class="tx-val ${cls}">${prefix}${Rfmt(val)}</span>
+          <button class="tx-x" onclick="askDel('${d.id}','${dEsc}',${hasGroup})">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  initSwipe();
+}
+function setFilter(t){filterTipo=t;renderExtrato();}
+
+// ════════════════════════════════════════════
+//  DELETE
+// ════════════════════════════════════════════
+function askDel(id,desc,isGroup){
+  delId=id;
+  const item=dados.find(d=>d.id===id);
+  document.getElementById('delDesc').textContent=`"${desc}"`;
+  const btnsEl=document.getElementById('delBtns');
+  if(isGroup&&item?.grupoId){
+    btnsEl.className='mbtns three';
+    btnsEl.innerHTML=`<button class="mbtn cancel" onclick="closeOverlay('delOverlay')">Cancelar</button><button class="mbtn del" onclick="confirmDel(false)">Só esta</button><button class="mbtn warn" onclick="confirmDel(true)">Todas parcelas</button>`;
+  }else{
+    btnsEl.className='mbtns';
+    btnsEl.innerHTML=`<button class="mbtn cancel" onclick="closeOverlay('delOverlay')">Cancelar</button><button class="mbtn del" onclick="confirmDel(false)">Excluir</button>`;
+  }
+  document.getElementById('delOverlay').classList.add('on');
+}
+async function confirmDel(allGroup){
+  const item=dados.find(d=>d.id===delId);
+  closeOverlay('delOverlay');
+  spin(true,'Excluindo…');
+  if(allGroup&&item?.grupoId){
+    await _sb.from('transactions').delete().eq('grupo_id',item.grupoId).eq('user_id',currentUser.id);
+    dados=dados.filter(d=>d.grupoId!==item.grupoId);
+    toast('Todas as parcelas excluídas');
+  }else{
+    await _sb.from('transactions').delete().eq('id',delId).eq('user_id',currentUser.id);
+    dados=dados.filter(d=>d.id!==delId);
+    toast('Lançamento excluído');
+  }
+  spin(false);
+  renderExtrato();
+}
+
+// ════════════════════════════════════════════
+//  FORM
+// ════════════════════════════════════════════
+function initForm(){
+  document.getElementById('fData').value=new Date().toISOString().split('T')[0];
+  buildCatSelect();
+  updatePreview();
+}
+function setTipo(t){
+  formTipo=t;
+  document.querySelectorAll('.tog-btn.d,.tog-btn.r').forEach(b=>b.classList.remove('on'));
+  document.querySelector('.tog-btn.'+(t==='Despesa'?'d':'r')).classList.add('on');
+  document.getElementById('pagSection').style.display=t==='Despesa'?'':'none';
+  document.getElementById('parcBox').style.display=(t==='Despesa'&&formPag==='credito')?'':'none';
+  document.getElementById('valLabel').textContent=(t==='Despesa'&&formPag==='credito'&&document.getElementById('parcToggle').checked)?'Valor Total (R$)':'Valor (R$)';
+  buildCatSelect();
+}
+function setPag(p){
+  formPag=p;
+  ['CC','DEB','PIX'].forEach(x=>document.getElementById('pag'+x).classList.remove('on'));
+  document.getElementById('pag'+{credito:'CC',debito:'DEB',pix:'PIX'}[p]).classList.add('on');
+  const show=p==='credito'&&formTipo==='Despesa';
+  document.getElementById('parcBox').style.display=show?'':'none';
+  if(!show){document.getElementById('parcToggle').checked=false;onParcToggle();}
+}
+function onParcToggle(){
+  const on=document.getElementById('parcToggle').checked;
+  document.getElementById('parcDetail').className='parc-detail'+(on?' show':'');
+  document.getElementById('valLabel').textContent=on?'Valor Total (R$)':'Valor (R$)';
+  updatePreview();
+}
+function updatePreview(){
+  const on=document.getElementById('parcToggle').checked;
+  if(!on){document.getElementById('parcPreview').textContent='';return;}
+  const n=parseInt(document.getElementById('fParc').value)||2;
+  const v=parseFloat(document.getElementById('fVal').value)||0;
+  const data=document.getElementById('fData').value;
+  if(!data||!v){document.getElementById('parcPreview').textContent='';return;}
+  const pv=v/n;
+  let html=`<strong>${n}x de ${Rfmt(pv)}</strong><br>`;
+  for(let i=0;i<Math.min(n,6);i++){const d=addMonths(data,i);const[y,mo]=d.split('-');html+=`${MES_PT[parseInt(mo)-1]} ${y}: ${Rfmt(pv)}<br>`;}
+  if(n>6)html+=`... e mais ${n-6} meses`;
+  document.getElementById('parcPreview').innerHTML=html;
+}
+function buildCatSelect(){
+  const list=formTipo==='Despesa'?catData.d:catData.r;
+  document.getElementById('fCat').innerHTML=list.map(c=>`<option value="${c}">${catIcon(c)} ${c.replace('(D) ','')}</option>`).join('');
+}
+async function salvar(){
+  const data=document.getElementById('fData').value;
+  const desc=document.getElementById('fDesc').value.trim();
+  const cat=document.getElementById('fCat').value;
+  const val=parseFloat(document.getElementById('fVal').value);
+  const parcelado=document.getElementById('parcToggle').checked&&formPag==='credito'&&formTipo==='Despesa';
+  const nParc=parcelado?Math.max(2,parseInt(document.getElementById('fParc').value)||2):1;
+  if(!data||!desc||!val||val<=0){toast('⚠️ Preencha todos os campos');return;}
+  const grupoId=parcelado?Date.now().toString():null;
+  const valorParcela=parcelado?Math.round((val/nParc)*100)/100:val;
+  const novos=[];
+  for(let i=0;i<nParc;i++){
+    const dt=parcelado?addMonths(data,i):data;
+    const[,mo]=dt.split('-');
+    novos.push({
+      id:`${Date.now()}_${i}`,data:dt,mes:MES[parseInt(mo)-1],
+      descricao:parcelado?`${desc} (${i+1}/${nParc})`:desc,
+      tipo:formTipo,categoria:cat,
+      receita:formTipo==='Receita'?val:0,
+      despesa:formTipo==='Despesa'?valorParcela:0,
+      pagamento:formPag,parcelas:nParc,parcelaAtual:i+1,grupoId
+    });
+  }
+  spin(true,'Salvando…');
+  const{error}=await _sb.from('transactions').insert(novos.map(t=>localToDb(t,currentUser.id)));
+  spin(false);
+  if(error){toast('⚠️ Erro ao salvar: '+error.message);return;}
+  dados.push(...novos);
+  document.getElementById('fDesc').value='';
+  document.getElementById('fVal').value='';
+  document.getElementById('parcToggle').checked=false;onParcToggle();
+  const mi=parseInt(data.split('-')[1])-1;curM=mi;curY=parseInt(data.split('-')[0]);
+  updateLabels();
+  toast(parcelado?`✓ ${nParc} parcelas salvas!`:'✓ Salvo!');
+  go('extrato');
+}
+
+// ════════════════════════════════════════════
+//  CATEGORIES
+// ════════════════════════════════════════════
+function openAddCat(){catTipoModal=formTipo;document.getElementById('catNome').value='';document.getElementById('catTipoD').classList.toggle('on',formTipo==='Despesa');document.getElementById('catTipoR').classList.toggle('on',formTipo==='Receita');document.getElementById('catOverlay').classList.add('on');}
+function setCatTipo(t){catTipoModal=t;document.getElementById('catTipoD').classList.toggle('on',t==='Despesa');document.getElementById('catTipoR').classList.toggle('on',t==='Receita');}
+async function saveNewCat(){
+  const nome=document.getElementById('catNome').value.trim();
+  if(!nome){toast('⚠️ Digite um nome');return;}
+  const list=catTipoModal==='Despesa'?catData.d:catData.r;
+  const full=catTipoModal==='Despesa'?`(D) ${nome}`:nome;
+  if(list.includes(full)){toast('Categoria já existe');return;}
+  const{error}=await _sb.from('custom_categories').insert({user_id:currentUser.id,nome:full,tipo:catTipoModal});
+  if(error&&!error.message.includes('unique')){toast('Erro ao salvar categoria');return;}
+  list.push(full);
+  closeOverlay('catOverlay');
+  buildCatSelect();
+  toast('✓ Categoria adicionada');
+}
+function openManageCats(){renderManageCats();document.getElementById('manageCatOverlay').classList.add('on');}
+function renderManageCats(){
+  const el=document.getElementById('manageCatContent');
+  let html='<div class="cat-section-title">Despesas</div>';
+  html+=catData.d.map(c=>{const isD=DEFAULT_CATS_D.includes(c);return`<div class="cat-manage-item"><span style="font-size:16px">${catIcon(c)}</span><span class="cat-manage-name">${c.replace('(D) ','')}</span><button class="cat-manage-del${isD?' disabled':''}" ${isD?'title="Padrão"':`onclick="delCat('${c}','d')"`}>✕</button></div>`;}).join('');
+  html+='<div class="cat-section-title">Receitas</div>';
+  html+=catData.r.map(c=>{const isD=DEFAULT_CATS_R.includes(c);return`<div class="cat-manage-item"><span style="font-size:16px">${catIcon(c)}</span><span class="cat-manage-name">${c.replace('(D) ','')}</span><button class="cat-manage-del${isD?' disabled':''}" ${isD?'title="Padrão"':`onclick="delCat('${c}','r')"`}>✕</button></div>`;}).join('');
+  el.innerHTML=html;
+}
+async function delCat(cat,tipo){
+  await _sb.from('custom_categories').delete().eq('nome',cat).eq('user_id',currentUser.id);
+  catData[tipo]=catData[tipo].filter(c=>c!==cat);
+  renderManageCats();toast('Categoria removida');
+}
+
+// ════════════════════════════════════════════
+//  BACKUP / RESTORE
+// ════════════════════════════════════════════
+function exportBackup(){
+  const payload=JSON.stringify({v:2,dados,cats:catData},null,2);
+  const blob=new Blob([payload],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const d=new Date();
+  a.href=url;a.download=`fin_backup_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;
+  a.click();URL.revokeObjectURL(url);toast('💾 Backup exportado!');
+}
+async function importBackup(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    try{
+      const parsed=JSON.parse(ev.target.result);
+      if(!parsed.dados)throw new Error('inválido');
+      spin(true,'Importando backup…');
+      // Clear existing
+      await _sb.from('transactions').delete().eq('user_id',currentUser.id);
+      // Insert new
+      const rows=parsed.dados.map(t=>localToDb({parcelas:1,parcelaAtual:1,grupoId:null,...t},currentUser.id));
+      for(let i=0;i<rows.length;i+=50)await _sb.from('transactions').insert(rows.slice(i,i+50));
+      dados=parsed.dados;
+      spin(false);
+      renderDash();
+      toast(`✓ ${dados.length} lançamentos restaurados!`);
+    }catch(err){spin(false);toast('⚠️ Arquivo inválido');}
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+// ════════════════════════════════════════════
+//  SWIPE TO DELETE
+// ════════════════════════════════════════════
+function initSwipe(){
+  const THRESHOLD=80;
+  document.querySelectorAll('.tx-wrap').forEach(wrap=>{
+    let startX=0,startY=0,curX=0,dragging=false,locked=false;
+    const inner=wrap.querySelector('.tx');
+    wrap.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;startY=e.touches[0].clientY;curX=0;dragging=true;locked=false;},{passive:true});
+    wrap.addEventListener('touchmove',e=>{
+      if(!dragging)return;
+      const dx=e.touches[0].clientX-startX,dy=e.touches[0].clientY-startY;
+      if(!locked){if(Math.abs(dy)>Math.abs(dx)){dragging=false;return;}locked=true;}
+      curX=Math.min(0,dx);wrap.classList.add('swiping');inner.style.transform=`translateX(${curX}px)`;e.preventDefault();
+    },{passive:false});
+    wrap.addEventListener('touchend',()=>{
+      dragging=false;wrap.classList.remove('swiping');
+      if(curX<-THRESHOLD){inner.style.transform='translateX(-90px)';setTimeout(()=>{inner.style.transform='';askDel(wrap.dataset.id,wrap.dataset.desc,wrap.dataset.group==='true');},300);}
+      else{inner.style.transform='';}
+    });
+  });
+}
+
+// ════════════════════════════════════════════
+//  APPLE TOUCH ICON
+// ════════════════════════════════════════════
+function genAppleIcon(){
+  try{const c=document.createElement('canvas');c.width=c.height=180;const ctx=c.getContext('2d');const r=36;ctx.beginPath();ctx.moveTo(r,0);ctx.lineTo(180-r,0);ctx.arcTo(180,0,180,r,r);ctx.lineTo(180,180-r);ctx.arcTo(180,180,180-r,180,r);ctx.lineTo(r,180);ctx.arcTo(0,180,0,180-r,r);ctx.lineTo(0,r);ctx.arcTo(0,0,r,0,r);ctx.closePath();const g=ctx.createLinearGradient(0,0,180,180);g.addColorStop(0,'#22c55e');g.addColorStop(1,'#15803d');ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=10;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(34,132);ctx.lineTo(60,90);ctx.lineTo(90,108);ctx.lineTo(136,54);ctx.stroke();ctx.beginPath();ctx.arc(136,54,10,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();let lnk=document.querySelector('link[rel="apple-touch-icon"]');if(!lnk){lnk=document.createElement('link');lnk.rel='apple-touch-icon';document.head.appendChild(lnk);}lnk.href=c.toDataURL('image/png');}catch(e){}
+}
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+genAppleIcon();
+if(initSupabase()){
+  spin(true,'Verificando sessão…');
+  _sb.auth.getSession().then(({data:{session}})=>{
+    spin(false);
+    if(session){onLogin(session.user);}
+    else{document.getElementById('authScreen').style.display='';}
+  });
+  _sb.auth.onAuthStateChange((event,session)=>{
+    if(event==='SIGNED_OUT'){document.getElementById('appScreen').style.display='none';document.getElementById('authScreen').style.display='';}
+  });
+}else{
+  // Config not filled — show auth screen anyway so user sees the warning
+  document.getElementById('authScreen').style.display='';
+}
+</script>
+</body>
+</html>
