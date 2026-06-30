@@ -287,6 +287,7 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
 .badge.cc{background:rgba(245,158,11,.15);color:#f59e0b;}
 .badge.deb{background:rgba(100,116,139,.15);color:#94a3b8;}
 .badge.pix{background:rgba(34,197,94,.15);color:#22c55e;}
+.badge.bol{background:rgba(234,179,8,.15);color:#ca8a04;}
 .badge.parc{background:rgba(139,92,246,.15);color:#a78bfa;}
 .tx-r{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
 .tx-val{font-size:14px;font-weight:800;}
@@ -302,7 +303,7 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
 .form{display:flex;flex-direction:column;gap:18px;}
 .fl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;}
 .togrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.pagrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.pagrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .tog-btn{
   padding:12px 8px;border:2px solid var(--border);border-radius:12px;
   background:var(--surf2);font-size:13px;font-weight:700;cursor:pointer;
@@ -377,6 +378,9 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
 .cat-manage-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:color .15s,background .15s;}
 .cat-manage-del:hover{color:var(--red);background:var(--red-d);}
 .cat-manage-del.disabled{opacity:.3;cursor:not-allowed;}
+.cat-emoji-edit{background:none;border:none;font-size:18px;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background .15s;line-height:1;}
+.cat-emoji-edit:hover{background:var(--surf2);}
+.emoji-inp{width:44px;font-size:18px;text-align:center;background:var(--surf2);border:1px solid var(--green);border-radius:6px;color:var(--text);padding:2px 4px;outline:none;}
 .cat-section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:12px 0 6px;}
 
 /* Config warning */
@@ -581,6 +585,7 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
           <button class="tog-btn on" onclick="setPag('credito')" id="pagCC">💳 Crédito</button>
           <button class="tog-btn" onclick="setPag('debito')" id="pagDEB">🏦 Débito</button>
           <button class="tog-btn" onclick="setPag('pix')" id="pagPIX">⚡ Pix</button>
+          <button class="tog-btn" onclick="setPag('boleto')" id="pagBOL">🧾 Boleto</button>
         </div>
       </div>
       <div class="parc-box" id="parcBox">
@@ -657,9 +662,15 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
           <button class="tog-btn r" id="catTipoR" onclick="setCatTipo('Receita')">📥 Receita</button>
         </div>
       </div>
-      <div>
-        <div class="fl">Nome</div>
-        <input type="text" class="fi" id="catNome" placeholder="Ex: Educação, Lazer…">
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end">
+        <div>
+          <div class="fl">Nome</div>
+          <input type="text" class="fi" id="catNome" placeholder="Ex: Educação, Lazer…">
+        </div>
+        <div>
+          <div class="fl">Emoji</div>
+          <input type="text" class="fi" id="catIcone" placeholder="🏷️" maxlength="4" style="text-align:center;width:64px;font-size:22px;padding:10px 4px;">
+        </div>
       </div>
     </div>
     <div class="mbtns">
@@ -724,7 +735,7 @@ function initSupabase(){
 // ════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════
-let dados=[], catData={d:[...DEFAULT_CATS_D],r:[...DEFAULT_CATS_R]};
+let dados=[], catData={d:[...DEFAULT_CATS_D],r:[...DEFAULT_CATS_R]}, customIcons={};
 let curY=new Date().getFullYear(), curM=new Date().getMonth();
 let curPage='dashboard', filterTipo='Todos';
 let delId=null;
@@ -738,10 +749,11 @@ const Rfmt=n=>'R$ '+Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,
 function monthData(){const m=MES[curM],y=String(curY);return dados.filter(d=>d.mes===m&&d.data&&d.data.startsWith(y));}
 function addMonths(dateStr,n){const[y,mo,d]=dateStr.split('-').map(Number);const dt=new Date(y,mo-1+n,d);return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;}
 function catColor(cat){return CAT_COLORS[cat]||('#'+Math.abs([...cat].reduce((h,c)=>Math.imul(31,h)+c.charCodeAt(0)|0,0)).toString(16).padStart(6,'0').slice(0,6));}
-function catIcon(cat){return ICONS[cat]||'🏷️';}
+function catIcon(cat){return customIcons[cat]||ICONS[cat]||'🏷️';}
 function pagBadge(pag){
   if(pag==='credito')return '<span class="badge cc">💳 CC</span>';
   if(pag==='pix')return '<span class="badge pix">⚡ Pix</span>';
+  if(pag==='boleto')return '<span class="badge bol">🧾 Bol</span>';
   return '<span class="badge deb">🏦 Déb</span>';
 }
 function spin(on,msg='Carregando…'){const o=document.getElementById('spinOverlay');o.classList.toggle('on',on);document.getElementById('spinMsg').textContent=msg;}
@@ -790,7 +802,7 @@ function translateAuthError(msg){
 }
 async function doLogout(){
   await _sb.auth.signOut();
-  currentUser=null;dados=[];catData={d:[...DEFAULT_CATS_D],r:[...DEFAULT_CATS_R]};
+  currentUser=null;dados=[];catData={d:[...DEFAULT_CATS_D],r:[...DEFAULT_CATS_R]};customIcons={};
   document.getElementById('appScreen').style.display='none';
   document.getElementById('authScreen').style.display='';
   switchAuthTab('login');
@@ -859,6 +871,7 @@ async function loadCustomCats(){
   data.forEach(c=>{
     if(c.tipo==='Despesa'&&!d.includes(c.nome))d.push(c.nome);
     else if(c.tipo==='Receita'&&!r.includes(c.nome))r.push(c.nome);
+    if(c.icone)customIcons[c.nome]=c.icone;
   });
   catData={d,r};
 }
@@ -1024,8 +1037,8 @@ function setTipo(t){
 }
 function setPag(p){
   formPag=p;
-  ['CC','DEB','PIX'].forEach(x=>document.getElementById('pag'+x).classList.remove('on'));
-  document.getElementById('pag'+{credito:'CC',debito:'DEB',pix:'PIX'}[p]).classList.add('on');
+  ['CC','DEB','PIX','BOL'].forEach(x=>document.getElementById('pag'+x).classList.remove('on'));
+  document.getElementById('pag'+{credito:'CC',debito:'DEB',pix:'PIX',boleto:'BOL'}[p]).classList.add('on');
   const show=p==='credito'&&formTipo==='Despesa';
   document.getElementById('parcBox').style.display=show?'':'none';
   if(!show){document.getElementById('parcToggle').checked=false;onParcToggle();}
@@ -1093,17 +1106,19 @@ async function salvar(){
 // ════════════════════════════════════════════
 //  CATEGORIES
 // ════════════════════════════════════════════
-function openAddCat(){catTipoModal=formTipo;document.getElementById('catNome').value='';document.getElementById('catTipoD').classList.toggle('on',formTipo==='Despesa');document.getElementById('catTipoR').classList.toggle('on',formTipo==='Receita');document.getElementById('catOverlay').classList.add('on');}
+function openAddCat(){catTipoModal=formTipo;document.getElementById('catNome').value='';document.getElementById('catIcone').value='';document.getElementById('catTipoD').classList.toggle('on',formTipo==='Despesa');document.getElementById('catTipoR').classList.toggle('on',formTipo==='Receita');document.getElementById('catOverlay').classList.add('on');}
 function setCatTipo(t){catTipoModal=t;document.getElementById('catTipoD').classList.toggle('on',t==='Despesa');document.getElementById('catTipoR').classList.toggle('on',t==='Receita');}
 async function saveNewCat(){
   const nome=document.getElementById('catNome').value.trim();
   if(!nome){toast('⚠️ Digite um nome');return;}
+  const icone=document.getElementById('catIcone').value.trim()||'🏷️';
   const list=catTipoModal==='Despesa'?catData.d:catData.r;
   const full=catTipoModal==='Despesa'?`(D) ${nome}`:nome;
   if(list.includes(full)){toast('Categoria já existe');return;}
-  const{error}=await _sb.from('custom_categories').insert({user_id:currentUser.id,nome:full,tipo:catTipoModal});
+  const{error}=await _sb.from('custom_categories').insert({user_id:currentUser.id,nome:full,tipo:catTipoModal,icone});
   if(error&&!error.message.includes('unique')){toast('Erro ao salvar categoria');return;}
   list.push(full);
+  customIcons[full]=icone;
   closeOverlay('catOverlay');
   buildCatSelect();
   toast('✓ Categoria adicionada');
@@ -1111,16 +1126,41 @@ async function saveNewCat(){
 function openManageCats(){renderManageCats();document.getElementById('manageCatOverlay').classList.add('on');}
 function renderManageCats(){
   const el=document.getElementById('manageCatContent');
+  const row=(c,tipo,isDefault)=>{
+    const ico=catIcon(c);
+    const emojiPart=isDefault
+      ?`<span style="font-size:18px;padding:2px 6px">${ico}</span>`
+      :`<button class="cat-emoji-edit" onclick="editCatEmoji(this,'${c}','${tipo}')">${ico}</button>`;
+    return`<div class="cat-manage-item">${emojiPart}<span class="cat-manage-name">${c.replace('(D) ','')}</span><button class="cat-manage-del${isDefault?' disabled':''}" ${isDefault?'title="Padrão"':`onclick="delCat('${c}','${tipo}')"`}>✕</button></div>`;
+  };
   let html='<div class="cat-section-title">Despesas</div>';
-  html+=catData.d.map(c=>{const isD=DEFAULT_CATS_D.includes(c);return`<div class="cat-manage-item"><span style="font-size:16px">${catIcon(c)}</span><span class="cat-manage-name">${c.replace('(D) ','')}</span><button class="cat-manage-del${isD?' disabled':''}" ${isD?'title="Padrão"':`onclick="delCat('${c}','d')"`}>✕</button></div>`;}).join('');
+  html+=catData.d.map(c=>row(c,'d',DEFAULT_CATS_D.includes(c))).join('');
   html+='<div class="cat-section-title">Receitas</div>';
-  html+=catData.r.map(c=>{const isD=DEFAULT_CATS_R.includes(c);return`<div class="cat-manage-item"><span style="font-size:16px">${catIcon(c)}</span><span class="cat-manage-name">${c.replace('(D) ','')}</span><button class="cat-manage-del${isD?' disabled':''}" ${isD?'title="Padrão"':`onclick="delCat('${c}','r')"`}>✕</button></div>`;}).join('');
+  html+=catData.r.map(c=>row(c,'r',DEFAULT_CATS_R.includes(c))).join('');
   el.innerHTML=html;
+}
+function editCatEmoji(btn,cat,tipo){
+  const inp=document.createElement('input');
+  inp.className='emoji-inp';inp.type='text';inp.value=catIcon(cat);inp.maxLength=4;
+  btn.replaceWith(inp);inp.focus();inp.select();
+  const save=async()=>{
+    const icon=inp.value.trim()||'🏷️';
+    await updateCatIcon(cat,icon);
+    inp.replaceWith(btn);btn.textContent=icon;
+  };
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}});
+}
+async function updateCatIcon(cat,icon){
+  customIcons[cat]=icon;
+  buildCatSelect();
+  await _sb.from('custom_categories').update({icone:icon}).eq('nome',cat).eq('user_id',currentUser.id);
 }
 async function delCat(cat,tipo){
   await _sb.from('custom_categories').delete().eq('nome',cat).eq('user_id',currentUser.id);
   catData[tipo]=catData[tipo].filter(c=>c!==cat);
-  renderManageCats();toast('Categoria removida');
+  delete customIcons[cat];
+  renderManageCats();buildCatSelect();toast('Categoria removida');
 }
 
 // ════════════════════════════════════════════
