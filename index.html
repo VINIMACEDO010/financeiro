@@ -32,7 +32,7 @@ input,select,textarea,button{-webkit-appearance:none;appearance:none;}
 input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
 
 /* ── Auth screen ── */
-#authScreen{
+#authScreen,#onbScreen{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
   padding:24px;
 }
@@ -468,6 +468,30 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
   </div>
 </div>
 
+<!-- ══ ONBOARDING (CASA) ══ -->
+<div id="onbScreen" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo"><div class="auth-logo-txt">fin<span>.</span></div></div>
+    <p style="text-align:center;color:var(--muted);font-size:14px;margin:-16px 0 22px">Configure a sua casa — o cofre compartilhado do casal</p>
+    <div class="auth-tab-row">
+      <button class="auth-tab on" id="onbTabCreate" onclick="onbSwitch('create')">Criar casa</button>
+      <button class="auth-tab" id="onbTabJoin" onclick="onbSwitch('join')">Entrar com código</button>
+    </div>
+    <div class="auth-err" id="onbErr"></div>
+    <div class="auth-form" id="onbCreateForm">
+      <div><div class="auth-lbl">Nome da casa</div><input class="auth-inp" id="onbNome" placeholder="Ex: Casa do Vini & Ana"></div>
+      <div><div class="auth-lbl">Seu nome (como você aparece)</div><input class="auth-inp" id="onbMe" placeholder="Ex: Vini"></div>
+      <button class="auth-btn" onclick="onbCreate()">Criar casa →</button>
+    </div>
+    <div class="auth-form" id="onbJoinForm" style="display:none">
+      <div><div class="auth-lbl">Código de convite</div><input class="auth-inp" id="onbCode" placeholder="Ex: A1B2C3" style="text-transform:uppercase"></div>
+      <div><div class="auth-lbl">Seu nome (como você aparece)</div><input class="auth-inp" id="onbMeJ" placeholder="Ex: Ana"></div>
+      <button class="auth-btn" onclick="onbJoin()">Entrar na casa →</button>
+    </div>
+    <button onclick="doLogout()" style="width:100%;margin-top:14px;padding:12px;border-radius:12px;border:1px solid var(--border);background:none;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Sair</button>
+  </div>
+</div>
+
 <!-- ══ APP ══ -->
 <div id="appScreen" style="display:none">
 <div class="layout">
@@ -501,6 +525,7 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
   <div class="sb-div"></div>
   <div class="sb-small">Configurações</div>
   <button class="sb-btn" onclick="openManageCats()"><span class="si">🏷️</span> Categorias</button>
+  <button class="sb-btn" onclick="openCasaModal()"><span class="si">🏠</span> Casa</button>
   <div class="sb-backup-row">
     <button class="sb-bk-btn" onclick="exportBackup()">💾 Backup</button>
     <button class="sb-bk-btn" onclick="document.getElementById('importFile').click()">📥 Importar</button>
@@ -533,7 +558,10 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
       </svg>
       <span class="mob-logo-txt">fin<span>.</span></span>
     </div>
-    <button style="background:none;border:none;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:8px;background:var(--surf2)" onclick="doLogout()">Sair</button>
+    <div style="display:flex;gap:8px">
+      <button style="border:none;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:8px;background:var(--surf2)" onclick="openCasaModal()">🏠 Casa</button>
+      <button style="border:none;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:8px;background:var(--surf2)" onclick="doLogout()">Sair</button>
+    </div>
   </div>
   <div class="mob-month">
     <button class="mob-mbtn" onclick="changeMonth(-1)">‹</button>
@@ -736,6 +764,11 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
   <div class="modal" onclick="event.stopPropagation()" id="editModal"></div>
 </div>
 
+<!-- Casa -->
+<div class="overlay" id="casaOverlay" onclick="closeOverlay('casaOverlay')">
+  <div class="modal" onclick="event.stopPropagation()" id="casaModal"></div>
+</div>
+
 <!-- ════ SUPABASE SDK ════ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
@@ -788,6 +821,7 @@ let delId=null;
 let formTipo='Despesa', formPag='credito', catTipoModal='Despesa';
 let currentUser=null;
 let invData=[], invSaldos=[];
+let household=null, members=[], nameById={};
 const INV_CLASS={reserva:{n:'Reserva de emergência',s:'Reserva',i:'🛟',c:'#3b82f6'},renda_fixa:{n:'Renda fixa',s:'Renda fixa',i:'🏦',c:'#22c55e'},renda_variavel:{n:'Renda variável',s:'Renda var.',i:'📈',c:'#f59e0b'}};
 
 // ════════════════════════════════════════════
@@ -850,17 +884,15 @@ function translateAuthError(msg){
 }
 async function doLogout(){
   await _sb.auth.signOut();
-  currentUser=null;dados=[];catData={d:[...DEFAULT_CATS_D],r:[...DEFAULT_CATS_R]};customIcons={};invData=[];invSaldos=[];
+  currentUser=null;dados=[];catData={d:[...DEFAULT_CATS_D],r:[...DEFAULT_CATS_R]};customIcons={};invData=[];invSaldos=[];household=null;members=[];nameById={};
   document.getElementById('appScreen').style.display='none';
+  document.getElementById('onbScreen').style.display='none';
   document.getElementById('authScreen').style.display='';
   switchAuthTab('login');
 }
 function onLogin(user){
   currentUser=user;
-  document.getElementById('authScreen').style.display='none';
-  document.getElementById('appScreen').style.display='';
-  document.getElementById('sbUser').textContent=user.email;
-  loadUserData();
+  ensureHousehold();
 }
 
 // ════════════════════════════════════════════
@@ -885,7 +917,7 @@ async function loadTransactions(){
 }
 function dbToLocal(r){
   return{
-    id:r.id,data:r.data,mes:r.mes,descricao:r.descricao,tipo:r.tipo,
+    id:r.id,createdBy:r.user_id,data:r.data,mes:r.mes,descricao:r.descricao,tipo:r.tipo,
     categoria:r.categoria,receita:+r.receita,despesa:+r.despesa,
     pagamento:r.pagamento||'debito',
     parcelas:r.parcelas||1,parcelaAtual:r.parcela_atual||1,
@@ -894,7 +926,7 @@ function dbToLocal(r){
 }
 function localToDb(t,userId){
   return{
-    id:t.id,user_id:userId,data:t.data,mes:t.mes,descricao:t.descricao,
+    id:t.id,user_id:userId,household_id:household?household.id:null,data:t.data,mes:t.mes,descricao:t.descricao,
     tipo:t.tipo,categoria:t.categoria,receita:t.receita,despesa:t.despesa,
     pagamento:t.pagamento,parcelas:t.parcelas||1,
     parcela_atual:t.parcelaAtual||1,grupo_id:t.grupoId||null
@@ -1019,7 +1051,7 @@ function renderExtrato(){
         <div class="tx-ico" style="background:${color}22">${catIcon(d.categoria)}</div>
         <div class="tx-body" style="cursor:pointer" onclick="openEditTx('${d.id}')">
           <div class="tx-desc">${d.descricao}</div>
-          <div class="tx-meta">${d.categoria.replace('(D) ','')} · ${day}/${mo} ${pagBadge(pag)} ${parcBadge}</div>
+          <div class="tx-meta">${d.categoria.replace('(D) ','')} · ${day}/${mo} ${pagBadge(pag)} ${parcBadge} ${whoTag(d.createdBy)}</div>
         </div>
         <div class="tx-r">
           <span class="tx-val ${cls}">${prefix}${Rfmt(val)}</span>
@@ -1054,11 +1086,11 @@ async function confirmDel(allGroup){
   closeOverlay('delOverlay');
   spin(true,'Excluindo…');
   if(allGroup&&item?.grupoId){
-    await _sb.from('transactions').delete().eq('grupo_id',item.grupoId).eq('user_id',currentUser.id);
+    await _sb.from('transactions').delete().eq('grupo_id',item.grupoId).eq('household_id',household.id);
     dados=dados.filter(d=>d.grupoId!==item.grupoId);
     toast('Todas as parcelas excluídas');
   }else{
-    await _sb.from('transactions').delete().eq('id',delId).eq('user_id',currentUser.id);
+    await _sb.from('transactions').delete().eq('id',delId).eq('household_id',household.id);
     dados=dados.filter(d=>d.id!==delId);
     toast('Lançamento excluído');
   }
@@ -1163,7 +1195,7 @@ async function saveNewCat(){
   const list=catTipoModal==='Despesa'?catData.d:catData.r;
   const full=catTipoModal==='Despesa'?`(D) ${nome}`:nome;
   if(list.includes(full)){toast('Categoria já existe');return;}
-  const{error}=await _sb.from('custom_categories').insert({user_id:currentUser.id,nome:full,tipo:catTipoModal,icone});
+  const{error}=await _sb.from('custom_categories').insert({user_id:currentUser.id,household_id:household.id,nome:full,tipo:catTipoModal,icone});
   if(error&&!error.message.includes('unique')){toast('Erro ao salvar categoria');return;}
   list.push(full);
   customIcons[full]=icone;
@@ -1202,10 +1234,10 @@ function editCatEmoji(btn,cat,tipo){
 async function updateCatIcon(cat,icon){
   customIcons[cat]=icon;
   buildCatSelect();
-  await _sb.from('custom_categories').update({icone:icon}).eq('nome',cat).eq('user_id',currentUser.id);
+  await _sb.from('custom_categories').update({icone:icon}).eq('nome',cat).eq('household_id',household.id);
 }
 async function delCat(cat,tipo){
-  await _sb.from('custom_categories').delete().eq('nome',cat).eq('user_id',currentUser.id);
+  await _sb.from('custom_categories').delete().eq('nome',cat).eq('household_id',household.id);
   catData[tipo]=catData[tipo].filter(c=>c!==cat);
   delete customIcons[cat];
   renderManageCats();buildCatSelect();toast('Categoria removida');
@@ -1232,7 +1264,7 @@ async function importBackup(e){
       if(!parsed.dados)throw new Error('inválido');
       spin(true,'Importando backup…');
       // Clear existing
-      await _sb.from('transactions').delete().eq('user_id',currentUser.id);
+      await _sb.from('transactions').delete().eq('household_id',household.id);
       // Insert new
       const rows=parsed.dados.map(t=>localToDb({parcelas:1,parcelaAtual:1,grupoId:null,...t},currentUser.id));
       for(let i=0;i<rows.length;i+=50)await _sb.from('transactions').insert(rows.slice(i,i+50));
@@ -1327,6 +1359,8 @@ function renderInvest(){
   const el=document.getElementById('invList');
   if(!invData.length){el.innerHTML='<div class="empty"><div class="eico">💹</div><p>Nenhum investimento ainda.<br>Toque em "Novo investimento" para começar.</p></div>';return;}
   let html='';
+  const serie=patSerie();
+  if(serie.length>=2)html+=`<div class="card" style="margin-bottom:12px"><div class="sec">Evolução do Patrimônio</div>${patLineSVG(serie)}<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--muted)"><span>${serie[0].label}: ${Rfmt(serie[0].total)}</span><span style="color:var(--green);font-weight:700">${serie[serie.length-1].label}: ${Rfmt(serie[serie.length-1].total)}</span></div></div>`;
   ['reserva','renda_fixa','renda_variavel'].forEach(cl=>{
     const list=invData.filter(i=>i.classe===cl);if(!list.length)return;
     html+=`<div class="inv-cls"><span>${INV_CLASS[cl].i}</span> ${INV_CLASS[cl].n}</div>`;
@@ -1334,7 +1368,7 @@ function renderInvest(){
       html+=`<div class="inv-item" onclick="openInvDetail('${i.id}')">
         <div class="inv-ico" style="background:${col}22;color:${col}">${INV_CLASS[i.classe].i}</div>
         <div class="inv-body"><div class="inv-name">${escInv(i.nome)}</div>
-          <div class="inv-meta">${s.mMonth?('Rend. no mês: '+(s.mPct!=null?fmtPct(s.mPct):'—')):'Sem lançamento ainda'}</div></div>
+          <div class="inv-meta">${s.mMonth?('Rend. no mês: '+(s.mPct!=null?fmtPct(s.mPct):'—')):'Sem lançamento ainda'}${members.length>1&&i.user_id&&nameById[i.user_id]?(' · '+nameById[i.user_id]):''}</div></div>
         <div class="inv-r"><div class="inv-saldo">${Rfmt(s.saldo)}</div><div class="inv-rend ${s.rend>=0?'pos':'neg'}">${fmtPct(s.rendPct)} total</div></div></div>`;});
   });
   el.innerHTML=html;
@@ -1363,7 +1397,7 @@ async function saveInvest(){
     const{error}=await _sb.from('investimentos').update({nome,classe:_invCls}).eq('id',_invEdit);spin(false);
     if(error){toast('Erro ao salvar');return;}const it=invData.find(x=>x.id===_invEdit);it.nome=nome;it.classe=_invCls;
   }else{
-    const{data,error}=await _sb.from('investimentos').insert({user_id:currentUser.id,nome,classe:_invCls}).select().single();spin(false);
+    const{data,error}=await _sb.from('investimentos').insert({user_id:currentUser.id,household_id:household.id,nome,classe:_invCls}).select().single();spin(false);
     if(error){toast('Erro ao salvar');return;}invData.push(data);
   }
   closeOverlay('invOverlay');renderInvest();toast('✓ Salvo');
@@ -1416,7 +1450,7 @@ async function saveSnap(invId){
   const ym=document.getElementById('snapMes').value;if(!ym){toast('Escolha o mês');return;}
   const saldo=parseFloat(document.getElementById('snapSaldo').value);if(isNaN(saldo)){toast('Informe o saldo');return;}
   const aporte=parseFloat(document.getElementById('snapAporte').value)||0;
-  const rec={user_id:currentUser.id,investimento_id:invId,ref_month:ym+'-01',saldo,aporte};
+  const rec={user_id:currentUser.id,household_id:household.id,investimento_id:invId,ref_month:ym+'-01',saldo,aporte};
   spin(true,'Salvando…');
   const{data,error}=await _sb.from('investimento_saldos').upsert(rec,{onConflict:'investimento_id,ref_month'}).select().single();spin(false);
   if(error){toast('Erro ao salvar');return;}
@@ -1478,7 +1512,7 @@ async function saveEditTx(){
     receita:_editTipo==='Receita'?val:0,despesa:_editTipo==='Despesa'?val:0,
     pagamento:_editTipo==='Despesa'?_editPag:(t.pagamento||'pix')};
   spin(true,'Salvando…');
-  const{error}=await _sb.from('transactions').update(patch).eq('id',_editId).eq('user_id',currentUser.id);
+  const{error}=await _sb.from('transactions').update(patch).eq('id',_editId).eq('household_id',household.id);
   spin(false);
   if(error){toast('Erro ao salvar: '+error.message);return;}
   Object.assign(t,patch);
@@ -1497,13 +1531,118 @@ async function renameCatPrompt(cat,tipo){
   const arr=isD?catData.d:catData.r;
   if(arr.includes(full)){toast('Já existe uma categoria com esse nome');return;}
   spin(true,'Renomeando…');
-  await _sb.from('custom_categories').update({nome:full}).eq('nome',cat).eq('user_id',currentUser.id);
-  await _sb.from('transactions').update({categoria:full}).eq('categoria',cat).eq('user_id',currentUser.id);
+  await _sb.from('custom_categories').update({nome:full}).eq('nome',cat).eq('household_id',household.id);
+  await _sb.from('transactions').update({categoria:full}).eq('categoria',cat).eq('household_id',household.id);
   spin(false);
   const i=arr.indexOf(cat);if(i>=0)arr[i]=full;
   if(customIcons[cat]){customIcons[full]=customIcons[cat];delete customIcons[cat];}
   dados.forEach(d=>{if(d.categoria===cat)d.categoria=full;});
   renderManageCats();buildCatSelect();renderDash();toast('✓ Renomeada');
+}
+
+// ════════════════════════════════════════════
+//  CASA / CASAL
+// ════════════════════════════════════════════
+async function ensureHousehold(){
+  spin(true,'Carregando…');
+  const{data:mem}=await _sb.from('household_members').select('household_id,nome').eq('user_id',currentUser.id).limit(1);
+  if(!mem||!mem.length){spin(false);showOnboarding();return;}
+  await enterHousehold(mem[0].household_id);
+}
+async function enterHousehold(hid){
+  spin(true,'Carregando…');
+  const{data:hh}=await _sb.from('households').select('*').eq('id',hid).single();
+  household=hh||{id:hid,nome:'Casa',invite_code:''};
+  const{data:mm}=await _sb.from('household_members').select('user_id,nome,papel').eq('household_id',hid);
+  members=mm||[];nameById={};members.forEach(m=>nameById[m.user_id]=m.nome);
+  document.getElementById('onbScreen').style.display='none';
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('appScreen').style.display='';
+  document.getElementById('sbUser').textContent=currentUser.email;
+  await loadUserData();
+  spin(false);
+}
+function showOnboarding(){
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('onbScreen').style.display='';
+}
+function onbSwitch(m){
+  document.getElementById('onbTabCreate').classList.toggle('on',m==='create');
+  document.getElementById('onbTabJoin').classList.toggle('on',m==='join');
+  document.getElementById('onbCreateForm').style.display=m==='create'?'':'none';
+  document.getElementById('onbJoinForm').style.display=m==='join'?'':'none';
+  document.getElementById('onbErr').classList.remove('on');
+}
+async function onbCreate(){
+  const nome=document.getElementById('onbNome').value.trim();
+  const me=document.getElementById('onbMe').value.trim();
+  const err=document.getElementById('onbErr');err.classList.remove('on');
+  if(!me){err.textContent='Diga como você quer aparecer';err.classList.add('on');return;}
+  spin(true,'Criando casa…');
+  const{data,error}=await _sb.rpc('create_household',{p_nome:nome,p_display:me});
+  spin(false);
+  if(error){err.textContent=error.message;err.classList.add('on');return;}
+  await enterHousehold(data.id);
+}
+async function onbJoin(){
+  const code=document.getElementById('onbCode').value.trim();
+  const me=document.getElementById('onbMeJ').value.trim();
+  const err=document.getElementById('onbErr');err.classList.remove('on');
+  if(!code||!me){err.textContent='Preencha o código e o seu nome';err.classList.add('on');return;}
+  spin(true,'Entrando…');
+  const{data,error}=await _sb.rpc('join_household',{p_code:code,p_display:me});
+  spin(false);
+  if(error){err.textContent=(error.message||'').toLowerCase().includes('inv')?'Código de convite inválido':error.message;err.classList.add('on');return;}
+  await enterHousehold(data.id);
+}
+function whoTag(uid){
+  if(members.length<2||!uid)return '';
+  const nm=nameById[uid];if(!nm)return '';
+  return `<span class="badge" style="background:rgba(59,130,246,.15);color:#93c5fd">👤 ${nm}</span>`;
+}
+function openCasaModal(){
+  const list=members.map(m=>`<div class="cat-manage-item"><span style="font-size:18px">👤</span><span class="cat-manage-name">${m.nome}${m.user_id===currentUser.id?' <span style="color:var(--muted)">(você)</span>':''}</span></div>`).join('')||'<p style="color:var(--muted);font-size:13px">—</p>';
+  document.getElementById('casaModal').innerHTML=`
+   <div class="modal-handle"></div>
+   <h3>${household?household.nome:'Casa'}</h3>
+   <p class="sub" style="margin-bottom:16px">Compartilhe o código com seu par para lançarem juntos.</p>
+   <div class="fl">Código de convite</div>
+   <div style="display:flex;gap:8px;align-items:stretch;margin-bottom:16px">
+     <div style="flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:24px;font-weight:900;letter-spacing:4px;text-align:center">${household?household.invite_code:''}</div>
+     <button class="mbtn ok" style="padding:0 18px" onclick="copyInvite()">Copiar</button>
+   </div>
+   <div class="cat-section-title">Membros da casa</div>
+   ${list}
+   <button class="btn-save" style="margin-top:16px" onclick="closeOverlay('casaOverlay')">Fechar</button>`;
+  document.getElementById('casaOverlay').classList.add('on');
+}
+function copyInvite(){try{navigator.clipboard.writeText(household.invite_code);}catch(e){}toast('Código copiado ✓');}
+
+// ════════════════════════════════════════════
+//  GRÁFICO — EVOLUÇÃO DO PATRIMÔNIO
+// ════════════════════════════════════════════
+function patSerie(){
+  const set=new Set();invSaldos.forEach(s=>set.add(s.ref_month.slice(0,7)));
+  const months=[...set].sort();
+  return months.map(ym=>{let tot=0;invData.forEach(iv=>{const ss=invSaldosOf(iv.id).filter(s=>s.ref_month.slice(0,7)<=ym);if(ss.length)tot+=+ss[ss.length-1].saldo;});return{ym,label:MES[parseInt(ym.slice(5,7))-1]+'/'+ym.slice(2,4),total:tot};});
+}
+function patLineSVG(pts){
+  const W=600,H=150,padL=8,padR=8,top=14,bot=H-22,n=pts.length;
+  const ys=pts.map(p=>p.total);let mn=Math.min(...ys),mx=Math.max(...ys);
+  if(mx===mn){mx=mx+1;mn=Math.max(0,mn-1);}const span=mx-mn;
+  const X=i=>padL+(n===1?(W-padL-padR)/2:i*(W-padL-padR)/(n-1));
+  const Y=v=>bot-((v-mn)/span)*(bot-top);
+  let d='';pts.forEach((p,i)=>{d+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.total).toFixed(1);});
+  const area=d+`L${X(n-1).toFixed(1)} ${bot} L${X(0).toFixed(1)} ${bot} Z`;
+  const showIdx=n<=8?pts.map((_,i)=>i):[0,Math.floor(n/2),n-1];
+  let labels='';pts.forEach((p,i)=>{if(showIdx.includes(i))labels+=`<text x="${X(i).toFixed(1)}" y="${H-6}" text-anchor="middle" fill="#64748b" font-size="10" font-family="-apple-system,sans-serif">${p.label}</text>`;});
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" preserveAspectRatio="xMidYMid meet">
+    <defs><linearGradient id="patg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity=".3"/><stop offset="1" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#patg)"/>
+    <path d="${d}" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${X(n-1).toFixed(1)}" cy="${Y(pts[n-1].total).toFixed(1)}" r="4" fill="#22c55e"/>
+    ${labels}</svg>`;
 }
 </script>
 </body>
