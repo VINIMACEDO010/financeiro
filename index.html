@@ -166,12 +166,12 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
 
 .mob-nav{
   display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:640px;
+  width:100%;max-width:700px;
   height:calc(var(--nav)+env(safe-area-inset-bottom));
   padding-bottom:env(safe-area-inset-bottom);
   background:rgba(11,12,20,.9);border-top:1px solid var(--border);
   backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-  grid-template-columns:repeat(4,1fr);z-index:100;
+  grid-template-columns:repeat(5,1fr);z-index:100;
 }
 .mn-btn{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
@@ -345,6 +345,26 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
 }
 .btn-save:active{opacity:.85;transform:scale(.98);}
 
+/* Investimentos */
+.inv-cls{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:18px 0 8px;display:flex;align-items:center;gap:6px;}
+.inv-item{display:flex;align-items:center;gap:12px;background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;transition:transform .1s;margin-bottom:8px;}
+.inv-item:active{transform:scale(.99);}
+.inv-ico{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.inv-body{flex:1;min-width:0;}
+.inv-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.inv-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+.inv-r{text-align:right;flex-shrink:0;}
+.inv-saldo{font-size:15px;font-weight:800;}
+.inv-rend{font-size:12px;font-weight:700;margin-top:2px;}
+.inv-rend.pos{color:var(--green);}.inv-rend.neg{color:var(--red);}
+.tog3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.tog3 .tog-btn{padding:12px 4px;font-size:12px;}
+.inv-hist{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;}
+.inv-hist th,.inv-hist td{padding:8px 4px;border-bottom:1px solid var(--border);text-align:right;}
+.inv-hist th:first-child,.inv-hist td:first-child{text-align:left;}
+.inv-hist th{color:var(--muted);font-weight:700;font-size:11px;}
+.inv-hist tr:last-child td{border-bottom:none;}
+
 /* Toast */
 .toast{
   position:fixed;left:50%;transform:translateX(-50%);
@@ -477,6 +497,7 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
   <button class="sb-btn" onclick="go('relatorios')" id="sb-relatorios"><span class="si">📈</span> Relatórios</button>
   <button class="sb-btn" onclick="go('novo')" id="sb-novo"><span class="si">＋</span> Novo Lançamento</button>
   <button class="sb-btn" onclick="go('extrato')" id="sb-extrato"><span class="si">📋</span> Extrato</button>
+  <button class="sb-btn" onclick="go('investimentos')" id="sb-investimentos"><span class="si">💹</span> Investimentos</button>
   <div class="sb-div"></div>
   <div class="sb-small">Configurações</div>
   <button class="sb-btn" onclick="openManageCats()"><span class="si">🏷️</span> Categorias</button>
@@ -619,6 +640,17 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
   <div class="tx-list" id="txList"></div>
 </div>
 
+<!-- Investimentos -->
+<div class="page" id="page-investimentos">
+  <div class="bal">
+    <div class="bal-lbl">Patrimônio Investido</div>
+    <div class="bal-val pos" id="invTotal">R$ 0,00</div>
+    <div class="bal-sub" id="invSub"></div>
+  </div>
+  <button class="btn-save" style="margin-bottom:14px" onclick="openInvNew()">＋ Novo investimento</button>
+  <div id="invList"></div>
+</div>
+
 </div><!-- /main-wrap -->
 </div><!-- /layout -->
 
@@ -631,6 +663,9 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
   </button>
   <button class="mn-btn add" onclick="go('novo')" id="mn-novo">
     <span class="mn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>Novo
+  </button>
+  <button class="mn-btn" onclick="go('investimentos')" id="mn-investimentos">
+    <span class="mn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M19 9l-5 5-3-3-4 4"/></svg></span>Investir
   </button>
   <button class="mn-btn" onclick="go('extrato')" id="mn-extrato">
     <span class="mn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span>Extrato
@@ -691,6 +726,16 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
   </div>
 </div>
 
+<!-- Investimento modal -->
+<div class="overlay" id="invOverlay" onclick="closeOverlay('invOverlay')">
+  <div class="modal" onclick="event.stopPropagation()" id="invModal"></div>
+</div>
+
+<!-- Editar lançamento -->
+<div class="overlay" id="editOverlay" onclick="closeOverlay('editOverlay')">
+  <div class="modal" onclick="event.stopPropagation()" id="editModal"></div>
+</div>
+
 <!-- ════ SUPABASE SDK ════ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
@@ -742,6 +787,8 @@ let curPage='dashboard', filterTipo='Todos';
 let delId=null;
 let formTipo='Despesa', formPag='credito', catTipoModal='Despesa';
 let currentUser=null;
+let invData=[], invSaldos=[];
+const INV_CLASS={reserva:{n:'Reserva de emergência',s:'Reserva',i:'🛟',c:'#3b82f6'},renda_fixa:{n:'Renda fixa',s:'Renda fixa',i:'🏦',c:'#22c55e'},renda_variavel:{n:'Renda variável',s:'Renda var.',i:'📈',c:'#f59e0b'}};
 
 // ════════════════════════════════════════════
 //  UTILS
@@ -803,7 +850,7 @@ function translateAuthError(msg){
 }
 async function doLogout(){
   await _sb.auth.signOut();
-  currentUser=null;dados=[];catData={d:[...DEFAULT_CATS_D],r:[...DEFAULT_CATS_R]};customIcons={};
+  currentUser=null;dados=[];catData={d:[...DEFAULT_CATS_D],r:[...DEFAULT_CATS_R]};customIcons={};invData=[];invSaldos=[];
   document.getElementById('appScreen').style.display='none';
   document.getElementById('authScreen').style.display='';
   switchAuthTab('login');
@@ -821,7 +868,7 @@ function onLogin(user){
 // ════════════════════════════════════════════
 async function loadUserData(){
   spin(true,'Carregando dados…');
-  await Promise.all([loadTransactions(), loadCustomCats()]);
+  await Promise.all([loadTransactions(), loadCustomCats(), loadInvest()]);
   spin(false);
   updateLabels();
   renderDash();
@@ -887,7 +934,7 @@ function go(name){
   document.getElementById('mn-'+name)?.classList.add('on');
   document.getElementById('sb-'+name)?.classList.add('on');
   curPage=name;
-  ({dashboard:renderDash,relatorios:renderReports,novo:initForm,extrato:renderExtrato}[name]||(() =>{}))();
+  ({dashboard:renderDash,relatorios:renderReports,novo:initForm,extrato:renderExtrato,investimentos:renderInvest}[name]||(() =>{}))();
 }
 function updateLabels(){
   const lbl=MES_PT[curM]+' '+curY;
@@ -970,7 +1017,7 @@ function renderExtrato(){
       <div class="tx-del-bg"><span class="dico">🗑️</span>Excluir</div>
       <div class="tx">
         <div class="tx-ico" style="background:${color}22">${catIcon(d.categoria)}</div>
-        <div class="tx-body">
+        <div class="tx-body" style="cursor:pointer" onclick="openEditTx('${d.id}')">
           <div class="tx-desc">${d.descricao}</div>
           <div class="tx-meta">${d.categoria.replace('(D) ','')} · ${day}/${mo} ${pagBadge(pag)} ${parcBadge}</div>
         </div>
@@ -1132,7 +1179,7 @@ function renderManageCats(){
     const emojiPart=isDefault
       ?`<span style="font-size:18px;padding:2px 6px">${ico}</span>`
       :`<button class="cat-emoji-edit" onclick="editCatEmoji(this,'${c}','${tipo}')">${ico}</button>`;
-    return`<div class="cat-manage-item">${emojiPart}<span class="cat-manage-name">${c.replace('(D) ','')}</span><button class="cat-manage-del${isDefault?' disabled':''}" ${isDefault?'title="Padrão"':`onclick="delCat('${c}','${tipo}')"`}>✕</button></div>`;
+    return`<div class="cat-manage-item">${emojiPart}<span class="cat-manage-name">${c.replace('(D) ','')}</span>${isDefault?'':`<button class="cat-manage-del" title="Renomear" onclick="renameCatPrompt('${c}','${tipo}')">✎</button>`}<button class="cat-manage-del${isDefault?' disabled':''}" ${isDefault?'title="Padrão"':`onclick="delCat('${c}','${tipo}')"`}>✕</button></div>`;
   };
   let html='<div class="cat-section-title">Despesas</div>';
   html+=catData.d.map(c=>row(c,'d',DEFAULT_CATS_D.includes(c))).join('');
@@ -1246,6 +1293,217 @@ if(initSupabase()){
 }else{
   // Config not filled — show auth screen anyway so user sees the warning
   document.getElementById('authScreen').style.display='';
+}
+
+// ════════════════════════════════════════════
+//  INVESTIMENTOS
+// ════════════════════════════════════════════
+function escInv(s){return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function fmtPct(v){return (v>0?'+':'')+(v||0).toFixed(2).replace('.',',')+'%';}
+function mesLabel(refm){const p=refm.slice(0,7).split('-');return MES[parseInt(p[1])-1]+'/'+p[0].slice(2);}
+async function loadInvest(){
+  const[a,b]=await Promise.all([
+    _sb.from('investimentos').select('*').order('created_at'),
+    _sb.from('investimento_saldos').select('*').order('ref_month')
+  ]);
+  invData=a.data||[]; invSaldos=b.data||[];
+}
+function invSaldosOf(id){return invSaldos.filter(s=>s.investimento_id===id).sort((a,b)=>a.ref_month.localeCompare(b.ref_month));}
+function invStat(id){
+  const ss=invSaldosOf(id);
+  if(!ss.length)return{saldo:0,investido:0,rend:0,rendPct:0,mRend:null,mPct:null,mMonth:null};
+  const saldo=+ss[ss.length-1].saldo;
+  const investido=(+ss[0].saldo)+ss.slice(1).reduce((s,x)=>s+(+x.aporte||0),0);
+  const rend=saldo-investido, rendPct=investido>0?rend/investido*100:0;
+  let mRend=null,mPct=null;const last=ss[ss.length-1];
+  if(ss.length>=2){const prev=ss[ss.length-2];const ap=+last.aporte||0;mRend=(+last.saldo)-(+prev.saldo)-ap;const base=(+prev.saldo)+ap;mPct=base>0?mRend/base*100:null;}
+  return{saldo,investido,rend,rendPct,mRend,mPct,mMonth:ss[ss.length-1].ref_month.slice(0,7)};
+}
+function invTotalStat(){let saldo=0,investido=0;invData.forEach(i=>{const s=invStat(i.id);saldo+=s.saldo;investido+=s.investido;});return{saldo,investido,rend:saldo-investido,rendPct:investido>0?(saldo-investido)/investido*100:0};}
+function renderInvest(){
+  const t=invTotalStat();
+  const tv=document.getElementById('invTotal');tv.textContent=Rfmt(t.saldo);tv.className='bal-val '+(t.rend>=0?'pos':'neg');
+  document.getElementById('invSub').innerHTML=`Investido: ${Rfmt(t.investido)} · Rendimento: <span style="color:${t.rend>=0?'var(--green)':'var(--red)'};font-weight:700">${t.rend>=0?'+':'-'}${Rfmt(t.rend)} (${fmtPct(t.rendPct)})</span>`;
+  const el=document.getElementById('invList');
+  if(!invData.length){el.innerHTML='<div class="empty"><div class="eico">💹</div><p>Nenhum investimento ainda.<br>Toque em "Novo investimento" para começar.</p></div>';return;}
+  let html='';
+  ['reserva','renda_fixa','renda_variavel'].forEach(cl=>{
+    const list=invData.filter(i=>i.classe===cl);if(!list.length)return;
+    html+=`<div class="inv-cls"><span>${INV_CLASS[cl].i}</span> ${INV_CLASS[cl].n}</div>`;
+    list.forEach(i=>{const s=invStat(i.id);const col=INV_CLASS[i.classe].c;
+      html+=`<div class="inv-item" onclick="openInvDetail('${i.id}')">
+        <div class="inv-ico" style="background:${col}22;color:${col}">${INV_CLASS[i.classe].i}</div>
+        <div class="inv-body"><div class="inv-name">${escInv(i.nome)}</div>
+          <div class="inv-meta">${s.mMonth?('Rend. no mês: '+(s.mPct!=null?fmtPct(s.mPct):'—')):'Sem lançamento ainda'}</div></div>
+        <div class="inv-r"><div class="inv-saldo">${Rfmt(s.saldo)}</div><div class="inv-rend ${s.rend>=0?'pos':'neg'}">${fmtPct(s.rendPct)} total</div></div></div>`;});
+  });
+  el.innerHTML=html;
+}
+let _invEdit=null,_invCls='reserva',_snapInv=null;
+function openInvNew(inv){
+  _invEdit=inv?inv.id:null;_invCls=inv?inv.classe:'reserva';
+  document.getElementById('invModal').innerHTML=`
+   <div class="modal-handle"></div>
+   <h3>${inv?'Editar investimento':'Novo investimento'}</h3>
+   <div class="form" style="margin-bottom:8px">
+     <div><div class="fl">Nome</div><input type="text" class="fi" id="invNome" placeholder="Ex: Tesouro Selic 2029" value="${inv?escInv(inv.nome):''}"></div>
+     <div><div class="fl">Classe</div><div class="tog3" id="invClsRow">
+       ${['reserva','renda_fixa','renda_variavel'].map(cl=>`<button class="tog-btn ${_invCls===cl?'on':''}" data-cls="${cl}" onclick="pickCls('${cl}')">${INV_CLASS[cl].i} ${INV_CLASS[cl].s}</button>`).join('')}
+     </div></div>
+   </div>
+   <div class="mbtns">${inv?`<button class="mbtn del" onclick="delInvest('${inv.id}')">Excluir</button>`:`<button class="mbtn cancel" onclick="closeOverlay('invOverlay')">Cancelar</button>`}
+     <button class="mbtn ok" onclick="saveInvest()">${inv?'Salvar':'Criar'}</button></div>`;
+  document.getElementById('invOverlay').classList.add('on');
+}
+function pickCls(cl){_invCls=cl;document.querySelectorAll('#invClsRow .tog-btn').forEach(b=>b.classList.toggle('on',b.dataset.cls===cl));}
+async function saveInvest(){
+  const nome=document.getElementById('invNome').value.trim();if(!nome){toast('⚠️ Dê um nome');return;}
+  spin(true,'Salvando…');
+  if(_invEdit){
+    const{error}=await _sb.from('investimentos').update({nome,classe:_invCls}).eq('id',_invEdit);spin(false);
+    if(error){toast('Erro ao salvar');return;}const it=invData.find(x=>x.id===_invEdit);it.nome=nome;it.classe=_invCls;
+  }else{
+    const{data,error}=await _sb.from('investimentos').insert({user_id:currentUser.id,nome,classe:_invCls}).select().single();spin(false);
+    if(error){toast('Erro ao salvar');return;}invData.push(data);
+  }
+  closeOverlay('invOverlay');renderInvest();toast('✓ Salvo');
+}
+async function delInvest(id){
+  spin(true,'Excluindo…');
+  await _sb.from('investimento_saldos').delete().eq('investimento_id',id);
+  await _sb.from('investimentos').delete().eq('id',id);spin(false);
+  invData=invData.filter(x=>x.id!==id);invSaldos=invSaldos.filter(s=>s.investimento_id!==id);
+  closeOverlay('invOverlay');renderInvest();toast('Investimento excluído');
+}
+function openInvDetail(id){
+  const inv=invData.find(x=>x.id===id);const ss=invSaldosOf(id);const st=invStat(id);
+  let rows='';
+  for(let k=ss.length-1;k>=0;k--){const s=ss[k];let mp=null;
+    if(k>=1){const prev=ss[k-1];const ap=+s.aporte||0;const base=(+prev.saldo)+ap;if(base>0)mp=((+s.saldo)-(+prev.saldo)-ap)/base*100;}
+    rows+=`<tr onclick="openInvSnap('${id}','${s.ref_month.slice(0,7)}')"><td>${mesLabel(s.ref_month)}</td><td>${(+s.aporte)?Rfmt(+s.aporte):'—'}</td><td>${Rfmt(+s.saldo)}</td><td style="color:${mp==null?'var(--muted)':(mp>=0?'var(--green)':'var(--red)')}">${mp==null?'—':fmtPct(mp)}</td></tr>`;}
+  document.getElementById('invModal').innerHTML=`
+   <div class="modal-handle"></div>
+   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+     <h3 style="margin:0">${escInv(inv.nome)}</h3>
+     <button class="sb-bk-btn" style="padding:8px 12px" onclick="openInvNew(invData.find(x=>x.id==='${id}'))">✎ Editar</button></div>
+   <div class="grid2" style="margin:0 0 12px">
+     <div class="card"><div class="stat-lbl">Saldo atual</div><div class="stat-val">${Rfmt(st.saldo)}</div></div>
+     <div class="card"><div class="stat-lbl">Rendimento total</div><div class="stat-val ${st.rend>=0?'g':'r'}">${fmtPct(st.rendPct)}</div></div>
+   </div>
+   <button class="btn-save" onclick="openInvSnap('${id}','')">＋ Registrar saldo do mês</button>
+   <div class="cat-section-title">Histórico mensal</div>
+   ${ss.length?`<table class="inv-hist"><tr><th>Mês</th><th>Aporte</th><th>Saldo</th><th>Rend.</th></tr>${rows}</table>`:'<p style="color:var(--muted);font-size:13px;padding:8px 0">Nenhum lançamento ainda. Registre quanto tem guardado neste mês.</p>'}
+   <button class="mbtn cancel" style="width:100%;margin-top:16px" onclick="closeOverlay('invOverlay')">Fechar</button>`;
+  document.getElementById('invOverlay').classList.add('on');
+}
+function openInvSnap(invId,ym){
+  const ss=invSaldosOf(invId);const ex=ym?ss.find(s=>s.ref_month.slice(0,7)===ym):null;
+  const now=new Date();const defYm=ym||(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
+  _snapInv=invId;
+  document.getElementById('invModal').innerHTML=`
+   <div class="modal-handle"></div>
+   <h3>${ex?'Editar mês':'Registrar saldo do mês'}</h3>
+   <div class="form" style="margin-bottom:8px">
+     <div><div class="fl">Mês de referência</div><input type="month" class="fi" id="snapMes" value="${defYm}"></div>
+     <div><div class="fl">Quanto tem guardado (saldo)</div><input type="number" class="fi" id="snapSaldo" step="0.01" inputmode="decimal" placeholder="0,00" value="${ex?(+ex.saldo):''}"></div>
+     <div><div class="fl">Aporte no mês (opcional)</div><input type="number" class="fi" id="snapAporte" step="0.01" inputmode="decimal" placeholder="0,00" value="${ex&&+ex.aporte?(+ex.aporte):''}"></div>
+   </div>
+   <div class="mbtns">${ex?`<button class="mbtn del" onclick="delSnap('${ex.id}','${invId}')">Excluir</button>`:`<button class="mbtn cancel" onclick="openInvDetail('${invId}')">Voltar</button>`}
+     <button class="mbtn ok" onclick="saveSnap('${invId}')">Salvar</button></div>`;
+  document.getElementById('invOverlay').classList.add('on');
+}
+async function saveSnap(invId){
+  const ym=document.getElementById('snapMes').value;if(!ym){toast('Escolha o mês');return;}
+  const saldo=parseFloat(document.getElementById('snapSaldo').value);if(isNaN(saldo)){toast('Informe o saldo');return;}
+  const aporte=parseFloat(document.getElementById('snapAporte').value)||0;
+  const rec={user_id:currentUser.id,investimento_id:invId,ref_month:ym+'-01',saldo,aporte};
+  spin(true,'Salvando…');
+  const{data,error}=await _sb.from('investimento_saldos').upsert(rec,{onConflict:'investimento_id,ref_month'}).select().single();spin(false);
+  if(error){toast('Erro ao salvar');return;}
+  invSaldos=invSaldos.filter(s=>!(s.investimento_id===invId&&s.ref_month.slice(0,7)===ym));invSaldos.push(data);
+  openInvDetail(invId);renderInvest();toast('✓ Salvo');
+}
+async function delSnap(id,invId){
+  spin(true,'Excluindo…');
+  await _sb.from('investimento_saldos').delete().eq('id',id);spin(false);
+  invSaldos=invSaldos.filter(s=>s.id!==id);openInvDetail(invId);renderInvest();toast('Excluído');
+}
+
+// ════════════════════════════════════════════
+//  EDITAR LANÇAMENTO  (CRUD)
+// ════════════════════════════════════════════
+let _editId=null,_editTipo='Despesa',_editPag='debito';
+function openEditTx(id){
+  const t=dados.find(d=>d.id===id);if(!t)return;
+  _editId=id;_editTipo=t.tipo;_editPag=t.pagamento||'debito';
+  const val=t.tipo==='Despesa'?t.despesa:t.receita;
+  const catList=_editTipo==='Despesa'?catData.d:catData.r;
+  const pags=[['credito','💳 Crédito'],['debito','🏦 Débito'],['pix','⚡ Pix'],['boleto','🧾 Boleto']];
+  const parcNote=(t.grupoId&&t.parcelas>1)?'<p class="sub" style="margin-top:12px">Parte de um parcelamento — a edição altera só esta parcela.</p>':'';
+  document.getElementById('editModal').innerHTML=`
+   <div class="modal-handle"></div>
+   <h3>Editar lançamento</h3>
+   <div class="form" style="margin-bottom:8px">
+     <div><div class="fl">Tipo</div><div class="togrow" id="edTog">
+       <button class="tog-btn d ${_editTipo==='Despesa'?'on':''}" onclick="setEditTipo('Despesa')">📤 Despesa</button>
+       <button class="tog-btn r ${_editTipo==='Receita'?'on':''}" onclick="setEditTipo('Receita')">📥 Receita</button></div></div>
+     <div><div class="fl">Data</div><input type="date" class="fi" id="edData" value="${t.data}"></div>
+     <div><div class="fl">Descrição</div><input type="text" class="fi" id="edDesc" value="${(t.descricao||'').replace(/"/g,'&quot;')}"></div>
+     <div><div class="fl">Categoria</div><select class="fi" id="edCat">${catList.map(c=>`<option value="${c}" ${c===t.categoria?'selected':''}>${catIcon(c)} ${c.replace('(D) ','')}</option>`).join('')}</select></div>
+     <div id="edPagWrap" style="${_editTipo==='Despesa'?'':'display:none'}"><div class="fl">Forma de Pagamento</div><div class="pagrow" id="edPagRow">
+       ${pags.map(pp=>`<button class="tog-btn ${_editPag===pp[0]?'on':''}" data-pag="${pp[0]}" onclick="setEditPag('${pp[0]}')">${pp[1]}</button>`).join('')}</div></div>
+     <div><div class="fl">Valor (R$)</div><input type="number" class="fi" id="edVal" step="0.01" min="0" inputmode="decimal" value="${val}"></div>
+   </div>
+   <div class="mbtns"><button class="mbtn del" onclick="delEditTx()">Excluir</button><button class="mbtn ok" onclick="saveEditTx()">Salvar</button></div>
+   ${parcNote}`;
+  document.getElementById('editOverlay').classList.add('on');
+}
+function setEditTipo(tp){
+  _editTipo=tp;
+  document.querySelectorAll('#edTog .tog-btn').forEach(b=>b.classList.toggle('on',(tp==='Despesa'&&b.classList.contains('d'))||(tp==='Receita'&&b.classList.contains('r'))));
+  const catList=tp==='Despesa'?catData.d:catData.r;
+  document.getElementById('edCat').innerHTML=catList.map(c=>`<option value="${c}">${catIcon(c)} ${c.replace('(D) ','')}</option>`).join('');
+  document.getElementById('edPagWrap').style.display=tp==='Despesa'?'':'none';
+}
+function setEditPag(k){_editPag=k;document.querySelectorAll('#edPagRow .tog-btn').forEach(b=>b.classList.toggle('on',b.dataset.pag===k));}
+async function saveEditTx(){
+  const t=dados.find(d=>d.id===_editId);if(!t)return;
+  const data=document.getElementById('edData').value;
+  const desc=document.getElementById('edDesc').value.trim();
+  const cat=document.getElementById('edCat').value;
+  const val=parseFloat(document.getElementById('edVal').value);
+  if(!data||!desc||isNaN(val)||val<=0){toast('⚠️ Preencha os campos');return;}
+  const mo=parseInt(data.split('-')[1]);
+  const patch={data,mes:MES[mo-1],descricao:desc,tipo:_editTipo,categoria:cat,
+    receita:_editTipo==='Receita'?val:0,despesa:_editTipo==='Despesa'?val:0,
+    pagamento:_editTipo==='Despesa'?_editPag:(t.pagamento||'pix')};
+  spin(true,'Salvando…');
+  const{error}=await _sb.from('transactions').update(patch).eq('id',_editId).eq('user_id',currentUser.id);
+  spin(false);
+  if(error){toast('Erro ao salvar: '+error.message);return;}
+  Object.assign(t,patch);
+  closeOverlay('editOverlay');
+  curM=mo-1;curY=parseInt(data.split('-')[0]);updateLabels();
+  renderExtrato();renderDash();toast('✓ Atualizado');
+}
+function delEditTx(){const t=dados.find(d=>d.id===_editId);closeOverlay('editOverlay');askDel(_editId,(t&&t.descricao)||'',!!(t&&t.grupoId&&t.parcelas>1));}
+
+// Renomear categoria personalizada
+async function renameCatPrompt(cat,tipo){
+  const isD=tipo==='d';const cur=cat.replace('(D) ','');
+  const novo=prompt('Renomear categoria:',cur);
+  if(novo===null)return;const nn=novo.trim();if(!nn||nn===cur)return;
+  const full=isD?('(D) '+nn):nn;
+  const arr=isD?catData.d:catData.r;
+  if(arr.includes(full)){toast('Já existe uma categoria com esse nome');return;}
+  spin(true,'Renomeando…');
+  await _sb.from('custom_categories').update({nome:full}).eq('nome',cat).eq('user_id',currentUser.id);
+  await _sb.from('transactions').update({categoria:full}).eq('categoria',cat).eq('user_id',currentUser.id);
+  spin(false);
+  const i=arr.indexOf(cat);if(i>=0)arr[i]=full;
+  if(customIcons[cat]){customIcons[full]=customIcons[cat];delete customIcons[cat];}
+  dados.forEach(d=>{if(d.categoria===cat)d.categoria=full;});
+  renderManageCats();buildCatSelect();renderDash();toast('✓ Renomeada');
 }
 </script>
 </body>
