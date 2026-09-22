@@ -391,13 +391,13 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
 .mbtn.del{background:var(--red);color:#fff;}
 .mbtn.ok{background:var(--green);color:#fff;}
 .mbtn.warn{background:#f59e0b;color:#fff;}
-.cat-mEmillige-list{max-height:45vh;overflow-y:auto;margin:12px 0;}
-.cat-mEmillige-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
-.cat-mEmillige-item:last-child{border:none;}
-.cat-mEmillige-name{flex:1;font-size:14px;font-weight:600;}
-.cat-mEmillige-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:color .15s,background .15s;}
-.cat-mEmillige-del:hover{color:var(--red);background:var(--red-d);}
-.cat-mEmillige-del.disabled{opacity:.3;cursor:not-allowed;}
+.cat-manage-list{max-height:45vh;overflow-y:auto;margin:12px 0;}
+.cat-manage-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.cat-manage-item:last-child{border:none;}
+.cat-manage-name{flex:1;font-size:14px;font-weight:600;}
+.cat-manage-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:color .15s,background .15s;}
+.cat-manage-del:hover{color:var(--red);background:var(--red-d);}
+.cat-manage-del.disabled{opacity:.3;cursor:not-allowed;}
 .cat-emoji-edit{background:none;border:none;font-size:18px;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background .15s;line-height:1;}
 .cat-emoji-edit:hover{background:var(--surf2);}
 .emoji-inp{width:44px;font-size:18px;text-align:center;background:var(--surf2);border:1px solid var(--green);border-radius:6px;color:var(--text);padding:2px 4px;outline:none;}
@@ -524,7 +524,7 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
   <button class="sb-btn" onclick="go('investimentos')" id="sb-investimentos"><span class="si">💹</span> Investimentos</button>
   <div class="sb-div"></div>
   <div class="sb-small">Configurações</div>
-  <button class="sb-btn" onclick="openMEmilligeCats()"><span class="si">🏷️</span> Categorias</button>
+  <button class="sb-btn" onclick="openManageCats()"><span class="si">🏷️</span> Categorias</button>
   <button class="sb-btn" onclick="openCasaModal()"><span class="si">🏠</span> Casa</button>
   <div class="sb-backup-row">
     <button class="sb-bk-btn" onclick="exportBackup()">💾 Backup</button>
@@ -657,7 +657,7 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
         <input type="number" class="fi" id="fVal" placeholder="0,00" step="0.01" min="0" inputmode="decimal" oninput="updatePreview()">
       </div>
       <button class="btn-save" onclick="salvar()" id="btnSalvar">Salvar Lançamento →</button>
-      <button onclick="openMEmilligeCats()" style="width:100%;margin-top:10px;padding:13px;border-radius:12px;border:1px solid var(--border);background:none;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">🏷️ Gerenciar categorias</button>
+      <button onclick="openManageCats()" style="width:100%;margin-top:10px;padding:13px;border-radius:12px;border:1px solid var(--border);background:none;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">🏷️ Gerenciar categorias</button>
     </div>
   </div>
 </div>
@@ -744,13 +744,13 @@ input[type="checkbox"]{-webkit-appearance:checkbox;appearance:checkbox;}
   </div>
 </div>
 
-<!-- MEmillige categories modal -->
-<div class="overlay" id="mEmilligeCatOverlay" onclick="closeOverlay('mEmilligeCatOverlay')">
+<!-- Manage categories modal -->
+<div class="overlay" id="manageCatOverlay" onclick="closeOverlay('manageCatOverlay')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <h3>Gerenciar Categorias</h3>
-    <div id="mEmilligeCatContent" class="cat-mEmillige-list"></div>
-    <button class="btn-save" style="padding:14px;margin-top:4px" onclick="closeOverlay('mEmilligeCatOverlay')">Fechar</button>
+    <div id="manageCatContent" class="cat-manage-list"></div>
+    <button class="btn-save" style="padding:14px;margin-top:4px" onclick="closeOverlay('manageCatOverlay')">Fechar</button>
   </div>
 </div>
 
@@ -1203,15 +1203,15 @@ async function saveNewCat(){
   buildCatSelect();
   toast('✓ Categoria adicionada');
 }
-function openMEmilligeCats(){renderMEmilligeCats();document.getElementById('mEmilligeCatOverlay').classList.add('on');}
-function renderMEmilligeCats(){
-  const el=document.getElementById('mEmilligeCatContent');
+function openManageCats(){renderManageCats();document.getElementById('manageCatOverlay').classList.add('on');}
+function renderManageCats(){
+  const el=document.getElementById('manageCatContent');
   const row=(c,tipo,isDefault)=>{
     const ico=catIcon(c);
     const emojiPart=isDefault
       ?`<span style="font-size:18px;padding:2px 6px">${ico}</span>`
       :`<button class="cat-emoji-edit" onclick="editCatEmoji(this,'${c}','${tipo}')">${ico}</button>`;
-    return`<div class="cat-mEmillige-item">${emojiPart}<span class="cat-mEmillige-name">${c.replace('(D) ','')}</span>${isDefault?'':`<button class="cat-mEmillige-del" title="Renomear" onclick="renameCatPrompt('${c}','${tipo}')">✎</button>`}<button class="cat-mEmillige-del${isDefault?' disabled':''}" ${isDefault?'title="Padrão"':`onclick="delCat('${c}','${tipo}')"`}>✕</button></div>`;
+    return`<div class="cat-manage-item">${emojiPart}<span class="cat-manage-name">${c.replace('(D) ','')}</span>${isDefault?'':`<button class="cat-manage-del" title="Renomear" onclick="renameCatPrompt('${c}','${tipo}')">✎</button>`}<button class="cat-manage-del${isDefault?' disabled':''}" ${isDefault?'title="Padrão"':`onclick="delCat('${c}','${tipo}')"`}>✕</button></div>`;
   };
   let html='<div class="cat-section-title">Despesas</div>';
   html+=catData.d.map(c=>row(c,'d',DEFAULT_CATS_D.includes(c))).join('');
@@ -1240,7 +1240,7 @@ async function delCat(cat,tipo){
   await _sb.from('custom_categories').delete().eq('nome',cat).eq('household_id',household.id);
   catData[tipo]=catData[tipo].filter(c=>c!==cat);
   delete customIcons[cat];
-  renderMEmilligeCats();buildCatSelect();toast('Categoria removida');
+  renderManageCats();buildCatSelect();toast('Categoria removida');
 }
 
 // ════════════════════════════════════════════
@@ -1537,7 +1537,7 @@ async function renameCatPrompt(cat,tipo){
   const i=arr.indexOf(cat);if(i>=0)arr[i]=full;
   if(customIcons[cat]){customIcons[full]=customIcons[cat];delete customIcons[cat];}
   dados.forEach(d=>{if(d.categoria===cat)d.categoria=full;});
-  renderMEmilligeCats();buildCatSelect();renderDash();toast('✓ Renomeada');
+  renderManageCats();buildCatSelect();renderDash();toast('✓ Renomeada');
 }
 
 // ════════════════════════════════════════════
@@ -1602,7 +1602,7 @@ function whoTag(uid){
   return `<span class="badge" style="background:rgba(59,130,246,.15);color:#93c5fd">👤 ${nm}</span>`;
 }
 function openCasaModal(){
-  const list=members.map(m=>`<div class="cat-mEmillige-item"><span style="font-size:18px">👤</span><span class="cat-mEmillige-name">${m.nome}${m.user_id===currentUser.id?' <span style="color:var(--muted)">(você)</span>':''}</span></div>`).join('')||'<p style="color:var(--muted);font-size:13px">—</p>';
+  const list=members.map(m=>`<div class="cat-manage-item"><span style="font-size:18px">👤</span><span class="cat-manage-name">${m.nome}${m.user_id===currentUser.id?' <span style="color:var(--muted)">(você)</span>':''}</span></div>`).join('')||'<p style="color:var(--muted);font-size:13px">—</p>';
   document.getElementById('casaModal').innerHTML=`
    <div class="modal-handle"></div>
    <h3>${household?household.nome:'Casa'}</h3>
